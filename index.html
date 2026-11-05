@@ -136,6 +136,25 @@ body{background:#75565d}
 @keyframes burst-ring{0%,25%{transform:translate(-50%,-50%) scale(.8);opacity:0}35%{opacity:.8}100%{transform:translate(-50%,-50%) scale(1.9);opacity:0}}
 @media(prefers-reduced-motion:reduce){.progress-wrap,.ripple,.progress-orb:after,.orb-glint{animation:none}.progress-orb,.task{transform:none;transition:none}.modal-backdrop:not([hidden]) .modal{animation:none}}
 
+
+/* Continuous glass transitions share one slow settling curve. */
+:root{--liquid-ease:cubic-bezier(.22,.75,.18,1)}
+.bottom-dock{isolation:isolate}
+.dock-lens{position:absolute;left:0;top:7px;height:57px;width:74px;border-radius:32px;pointer-events:none;z-index:-1;border:1px solid #f8dce578;background:linear-gradient(120deg,#f4dce37a,#cb9ebc45 50%,#f8e3ee63);box-shadow:inset 0 2px 3px #fff8,inset 0 -3px 7px #d3a0bd70,0 6px 10px -4px #43243855;transition:transform .65s var(--liquid-ease),width .65s var(--liquid-ease)}
+.navbtn.active{background:transparent;border-color:transparent;box-shadow:none}.navbtn{position:relative;transition:color .6s,transform .6s var(--liquid-ease)}
+.dock-lens:after{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(110deg,transparent 20%,#fff5 45%,transparent 70%);background-size:250% 100%;animation:lens-flow 6s ease-in-out infinite alternate}
+.task:after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;background:linear-gradient(110deg,transparent 20%,#fff2 42%,#f1c9df35 49%,transparent 70%);background-size:250% 100%}
+.task.flowing:after{animation:glass-flow .85s var(--liquid-ease)}
+.task-details{transform-origin:top center}
+.progress-orb{transition:transform .85s var(--liquid-ease),--progress 1.1s var(--liquid-ease)}
+.modal-backdrop:not([hidden]){animation:veil-in .45s var(--liquid-ease)}
+.modal-backdrop:not([hidden]) .modal{animation:liquid-arrive .6s var(--liquid-ease)}
+@keyframes lens-flow{from{background-position:100% 0;opacity:.4}to{background-position:0% 0;opacity:.85}}
+@keyframes glass-flow{0%{background-position:100% 0;opacity:0}25%{opacity:.9}100%{background-position:0% 0;opacity:0}}
+@keyframes veil-in{from{opacity:0}to{opacity:1}}
+@keyframes liquid-arrive{from{opacity:0;filter:blur(6px);transform:translateY(18px) scale(.97,.95)}to{opacity:1;filter:blur(0);transform:none}}
+@media(prefers-reduced-motion:reduce){.dock-lens{transition:none}.dock-lens:after,.task.flowing:after,.modal-backdrop:not([hidden]){animation:none}}
+
 </style>
 </head>
 <body>
@@ -195,7 +214,7 @@ function renderWeek(){const day=dateFromKey(selected),dayOfWeek=(day.getDay()+6)
 function renderTasks(){const host=$('tasks');host.replaceChildren();const list=currentItems(),done=list.filter(x=>x.done).length;$('counter').textContent=done+' из '+list.length;$('progressNumber').textContent=done;$('progressTotal').textContent='из '+list.length;$('progressOrb').style.setProperty('--progress',(list.length?done/list.length*100:0)+'%');$('progressOrb').setAttribute('aria-label','Выполнено '+done+' из '+list.length);
 if(!list.length){const empty=el('div','empty glass');empty.append(el('strong','','Пока здесь свободно 🫧'),el('p','','Добавь маленькое дело кнопкой +'));host.append(empty);return}
 for(const item of list){const card=el('article','task glass'+(item.done?' done':'')),head=el('div','taskhead'),check=el('input','check');check.type='checkbox';check.checked=!!item.done;check.setAttribute('aria-label',(item.done?'Вернуть дело: ':'Лопнуть пузырёк: ')+item.title);check.onchange=()=>{if(check.checked)pop(check,()=>{item.done=true;save();render()});else{item.done=false;save();render()}};const content=el('div','task-name'),title=el('span','tasktitle',item.title);content.append(title);const steps=Array.isArray(item.steps)?item.steps:(item.steps=[]);if(steps.length)content.append(el('span','task-meta',steps.length+' '+(steps.length===1?'шаг':steps.length<5?'шага':'шагов')+' · '+steps.filter(s=>s.done).length+' сделано'));
-head.append(check,content);const toggle=el('button','disclosure','›');toggle.type='button';toggle.setAttribute('aria-label','Открыть шаги и действия');toggle.setAttribute('aria-expanded',String(expanded.has(item.id)));toggle.onclick=()=>{if(expanded.has(item.id))expanded.delete(item.id);else expanded.add(item.id);render()};head.append(toggle);card.append(head);
+card.dataset.taskId=item.id;head.append(check,content);const toggle=el('button','disclosure','›');toggle.type='button';toggle.setAttribute('aria-label','Открыть шаги и действия');toggle.setAttribute('aria-expanded',String(expanded.has(item.id)));toggle.onclick=()=>{if(expanded.has(item.id))expanded.delete(item.id);else expanded.add(item.id);render()};head.append(toggle);card.append(head);
 if(expanded.has(item.id)){const details=el('div','task-details');if(steps.length){const stepList=el('div','steps');for(const s of steps){const row=el('label','step'+(s.done?' finished':'')),c=el('input','check');c.type='checkbox';c.checked=!!s.done;c.setAttribute('aria-label',(s.done?'Вернуть шаг: ':'Лопнуть шаг: ')+s.title);c.onchange=()=>{if(c.checked)pop(c,()=>{s.done=true;save();render()});else{s.done=false;save();render()}};row.append(c,el('span','',s.title));stepList.append(row)}details.append(stepList)}
 const actions=el('div','actions'),add=el('button','soft','＋ Добавить шаг');add.type='button';add.onclick=()=>{const old=details.querySelector('.stepform');if(old){old.remove();return}const form=el('form','stepform'),inp=el('input');inp.placeholder='Небольшой шаг';inp.required=true;inp.maxLength=150;const ok=el('button','','Добавить');ok.type='submit';form.append(inp,ok);form.onsubmit=e=>{e.preventDefault();const t=inp.value.trim();if(t){steps.push({title:t,done:false});item.suggestedSteps=false;save();render()}};details.append(form);inp.focus()};actions.append(add);
 if(!steps.length){const suggest=el('button','soft','✧ Помочь разбить на шаги');suggest.type='button';suggest.onclick=()=>{const t=item.title.toLowerCase();let v;if(/голов|волос|душ|мытьс/.test(t))v=['Приготовить полотенце','Собрать средства','Помыть волосы','Высушить волосы'];else if(/посуд/.test(t))v=['Подойти к раковине','Убрать лишнее','Помыть несколько предметов'];else if(/убор|прибра|комнат/.test(t))v=['Выбрать одну зону','Убрать три вещи','Протереть поверхность'];else v=['Подготовить нужное','Сделать первый шаг','Продолжить, если есть силы'];item.steps=v.map(title=>({title,done:false}));item.suggestedSteps=true;save();render()};actions.append(suggest)}
@@ -211,14 +230,55 @@ if(panel==='templates'){['Помыть голову','Разобрать пос�
 if(panel==='settings'){box.append(el('p','','Дела сохраняются на этом устройстве в хранилище браузера. Приложение с иконки iPhone может иметь отдельные данные от Safari. Сделай резервную копию, чтобы их не потерять.'));make('Скачать копию','JSON-файл',()=>{const data=new Blob([JSON.stringify({version:1,items},null,2)],{type:'application/json'}),url=URL.createObjectURL(data),a=document.createElement('a');a.href=url;a.download='bubble-backup.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)});make('Восстановить','Выбрать JSON',()=>{const input=document.createElement('input');input.type='file';input.accept='.json,application/json';input.onchange=async()=>{try{const file=input.files?.[0];if(!file)return;const data=JSON.parse(await file.text()),list=Array.isArray(data)?data:data.items;if(!Array.isArray(list)||!list.every(x=>x&&typeof x.title==='string'))throw Error('Invalid');if(!confirm('Восстановить '+list.length+' дел? Текущие дела будут сохранены, совпадения объединены.'))return;const byId=new Map(items.map(x=>[x.id,x]));list.forEach(x=>byId.set(x.id||uid(),x));items=[...byId.values()];save();render()}catch(e){alert('Не удалось прочитать резервную копию.')}};input.click()})}
 if(grid.children.length)box.append(grid)
 }
-function render(){const d=dateFromKey(selected);$('dateLabel').textContent=fmtDate(selected);$('listHeading').textContent=selected===nowKey()?'Мои дела':'Дела на '+d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'});renderWeek();renderTasks();renderPanel();document.querySelectorAll('.navbtn').forEach(b=>{const active=b.dataset.panel===panel;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))})}
+function render(){
+const previousCards=new Map([...document.querySelectorAll('.task')].map(card=>[card.dataset.taskId,{rect:card.getBoundingClientRect(),expanded:!!card.querySelector('.task-details'),done:card.classList.contains('done')}]));
+const previousPanel=$('quickPanel').textContent;
+const previousDate=$('dateLabel').textContent;
+const d=dateFromKey(selected);$('dateLabel').textContent=fmtDate(selected);$('listHeading').textContent=selected===nowKey()?'Мои дела':'Дела на '+d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'});renderWeek();renderTasks();renderPanel();document.querySelectorAll('.navbtn').forEach(b=>{const active=b.dataset.panel===panel;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});animateRender(previousCards,previousPanel,previousDate);moveLens()}
 document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>{panel=b.dataset.panel;render();if(panel!=='home')$('quickPanel').scrollIntoView({behavior:'smooth',block:'nearest'})});
 const backdrop=$('modalBackdrop');function renderDraft(){const host=$('draftSteps');host.replaceChildren();draftSteps.forEach((t,i)=>{const row=el('div','draft-step'),b=el('button','','×');b.type='button';b.setAttribute('aria-label','Удалить шаг');b.onclick=()=>{draftSteps.splice(i,1);renderDraft()};row.append(el('span','',t),b);host.append(row)})}
 function openModal(){draftSteps=[];renderDraft();$('taskInput').value='';$('draftStepInput').value='';backdrop.hidden=false;document.body.style.overflow='hidden';setTimeout(()=>$('taskInput').focus(),60)}
-function closeModal(){backdrop.hidden=true;document.body.style.overflow='';$('openModal').focus()}
+let modalExit=null;
+function closeModal(){
+  if(backdrop.hidden||modalExit)return;
+  const finish=()=>{backdrop.hidden=true;document.body.style.overflow='';$('openModal').focus();modalExit=null};
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches||!backdrop.animate){finish();return}
+  modalExit=backdrop.animate([{opacity:1},{opacity:0}],{duration:280,easing:'ease-out'});
+  backdrop.querySelector('.modal').animate([{transform:'none',filter:'blur(0)'},{transform:'translateY(12px) scale(.98)',filter:'blur(4px)'}],{duration:280,easing:'ease-out'});
+  modalExit.onfinish=finish;
+}
 function addDraft(){const inp=$('draftStepInput'),v=inp.value.trim();if(v){draftSteps.push(v);inp.value='';renderDraft();inp.focus()}}
 $('openModal').onclick=openModal;$('closeModal').onclick=closeModal;$('cancelModal').onclick=closeModal;$('addDraftStep').onclick=addDraft;$('draftStepInput').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();addDraft()}};backdrop.onclick=e=>{if(e.target===backdrop)closeModal()};document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!backdrop.hidden)closeModal()});
 $('newTask').onsubmit=e=>{e.preventDefault();const title=$('taskInput').value.trim();if(!title)return;const extra=$('draftStepInput').value.trim();if(extra)draftSteps.push(extra);addTask(title,draftSteps);closeModal();panel='home';render()};
+const liquidTiming={duration:650,easing:'cubic-bezier(.22,.75,.18,1)'};
+const dock=document.querySelector('.bottom-dock'),lens=el('i','dock-lens');
+lens.setAttribute('aria-hidden','true');dock.prepend(lens);
+function moveLens(){
+  const active=dock.querySelector('.navbtn.active');
+  lens.style.width=active.offsetWidth+'px';lens.style.transform='translateX('+active.offsetLeft+'px)';
+}
+new ResizeObserver(moveLens).observe(dock);
+function meltIn(node){
+  node.animate([{opacity:0,filter:'blur(4px)',translate:'0 7px'},{opacity:1,filter:'blur(0)',translate:'0 0'}],liquidTiming);
+}
+function animateRender(previousCards,previousPanel,previousDate){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches||!Element.prototype.animate)return;
+  document.querySelectorAll('.task').forEach(card=>{
+    const old=previousCards.get(card.dataset.taskId),rect=card.getBoundingClientRect();
+    if(!old){meltIn(card);return}
+    if(Math.abs(old.rect.height-rect.height)>1){
+      const heightAnimation=card.animate([{height:old.rect.height+'px',overflow:'hidden'},{height:rect.height+'px',overflow:'hidden'}],liquidTiming);
+      // Height interpolation already moves subsequent cards through normal layout.
+      card.classList.add('flowing');
+      heightAnimation.onfinish=()=>card.classList.remove('flowing');
+    }
+    const details=card.querySelector('.task-details');
+    if(details&&!old.expanded)meltIn(details);
+    if(old.done!==card.classList.contains('done'))card.classList.add('flowing');
+  });
+  if(previousPanel!==$('quickPanel').textContent&&!$('quickPanel').hidden)meltIn($('quickPanel'));
+  if(previousDate!==$('dateLabel').textContent)meltIn($('dateLabel'));
+}
 // Pointer lighting is restricted to fine pointers and respects reduced motion.
 const motionAllowed=matchMedia('(prefers-reduced-motion: reduce)'),finePointer=matchMedia('(hover: hover) and (pointer: fine)');
 let litSurface=null,lightFrame=0;
