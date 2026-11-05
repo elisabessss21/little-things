@@ -179,7 +179,7 @@ body{background:#75565d}
 <section id="homePanel" aria-label="Дела по дням">
 <div class="calendar-controls"><button type="button" id="prevWeek" aria-label="Предыдущая неделя">‹</button><span id="calendarMonth" aria-live="polite"></span><button type="button" id="nextWeek" aria-label="Следующая неделя">›</button><button type="button" id="goToday">Сегодня</button></div>
 <div class="week-strip" id="weekStrip" aria-label="Дни недели"></div>
-<div class="progress-wrap"><div id="progressOrb" class="progress-orb" style="--progress:0%" role="img" aria-label="Прогресс выполнения"><i class="orb-depth" aria-hidden="true"></i><i class="orb-shell" aria-hidden="true"></i><i class="orb-glint" aria-hidden="true"></i><span id="progressNumber" class="progress-number">0</span><span id="progressTotal" class="progress-total">из 0</span></div></div>
+<div class="progress-wrap"><button type="button" id="progressOrb" class="progress-orb" style="--progress:0%" aria-label="Добавить дело" aria-haspopup="dialog" title="Добавить дело"><i class="orb-depth" aria-hidden="true"></i><i class="orb-shell" aria-hidden="true"></i><i class="orb-glint" aria-hidden="true"></i><span id="progressNumber" class="progress-number">0</span><span id="progressTotal" class="progress-total">из 0</span></button></div>
 <div class="list-title"><h2 id="listHeading">Мои дела</h2><span id="counter">0 из 0</span></div>
 <section class="tasks" id="tasks" aria-label="Список дел"></section>
 </section>
@@ -201,7 +201,7 @@ const el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(items))}catch(e){alert('Не получилось сохранить данные в браузере. Проверь свободное место и настройки Safari.')}};
 function currentItems(){return selected===nowKey()?items.filter(x=>(!x.done&&x.date<=selected)||x.date===selected):items.filter(x=>x.date===selected)}
 function fmtDate(k){const d=dateFromKey(k),same=k===nowKey();return (same?'Сегодня, ':'')+d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'})}
-function addTask(title,steps=[],date=selected){const t=title.trim();if(!t)return;items.unshift({id:uid(),title:t,date,done:false,steps:steps.map(s=>({title:s,done:false}))});save();render()}
+function addTask(title,steps=[],date=selected,refresh=true){const t=title.trim();if(!t)return;items.unshift({id:uid(),title:t,date,done:false,steps:steps.map(s=>({title:s,done:false}))});save();if(refresh)render()}
 function pop(node,callback){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches){callback();return}
   const rect=node.getBoundingClientRect(),x=rect.left+rect.width/2,y=rect.top+rect.height/2;
@@ -224,7 +224,7 @@ function pop(node,callback){
 }
 
 function renderWeek(){$('calendarMonth').textContent=dateFromKey(selected).toLocaleDateString('ru-RU',{month:'long',year:'numeric'});$('goToday').disabled=selected===nowKey();const day=dateFromKey(selected),dayOfWeek=(day.getDay()+6)%7,monday=new Date(day);monday.setDate(day.getDate()-dayOfWeek);const strip=$('weekStrip');strip.replaceChildren();const short=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];for(let i=0;i<7;i++){const d=new Date(monday);d.setDate(monday.getDate()+i);const key=dateKey(d),btn=el('button','day'+(key===selected?' active':''));btn.type='button';btn.setAttribute('aria-label',d.toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'}));btn.setAttribute('aria-pressed',String(key===selected));btn.append(el('span','',short[i]),el('b','',String(d.getDate())));btn.onclick=()=>{selected=key;panel='home';render()};strip.append(btn)}}
-function renderTasks(){const host=$('tasks');host.replaceChildren();const list=currentItems(),done=list.filter(x=>x.done).length;$('counter').textContent=done+' из '+list.length;$('progressNumber').textContent=done;$('progressTotal').textContent='из '+list.length;$('progressOrb').style.setProperty('--progress',(list.length?done/list.length*100:0)+'%');$('progressOrb').setAttribute('aria-label','Выполнено '+done+' из '+list.length);
+function renderTasks(){const host=$('tasks');host.replaceChildren();const list=currentItems(),done=list.filter(x=>x.done).length;$('counter').textContent=done+' из '+list.length;$('progressNumber').textContent=done;$('progressTotal').textContent='из '+list.length;$('progressOrb').style.setProperty('--progress',(list.length?done/list.length*100:0)+'%');$('progressOrb').setAttribute('aria-label','Добавить дело. Выполнено '+done+' из '+list.length);
 if(!list.length){const empty=el('div','empty glass');empty.append(el('strong','','Пока здесь свободно 🫧'),el('p','','Добавь маленькое дело кнопкой +'));host.append(empty);return}
 for(const item of list){const card=el('article','task glass'+(item.done?' done':'')),head=el('div','taskhead'),check=el('input','check');check.type='checkbox';check.checked=!!item.done;check.setAttribute('aria-label',(item.done?'Вернуть дело: ':'Лопнуть пузырёк: ')+item.title);check.onchange=()=>{if(check.checked)pop(check,()=>{item.done=true;save();render()});else{item.done=false;save();render()}};const content=el('div','task-name'),title=el('span','tasktitle',item.title);content.append(title);const steps=Array.isArray(item.steps)?item.steps:(item.steps=[]);if(steps.length)content.append(el('span','task-meta',steps.length+' '+(steps.length===1?'шаг':steps.length<5?'шага':'шагов')+' · '+steps.filter(s=>s.done).length+' сделано'));
 card.dataset.taskId=item.id;head.append(check,content);const toggle=el('button','disclosure','›');toggle.type='button';toggle.setAttribute('aria-label','Открыть шаги и действия');toggle.setAttribute('aria-expanded',String(expanded.has(item.id)));toggle.onclick=()=>{if(expanded.has(item.id))expanded.delete(item.id);else expanded.add(item.id);render()};head.append(toggle);card.append(head);
@@ -243,7 +243,7 @@ const recommendations=[...counts.values()].sort((a,b)=>b.count-a.count).slice(0,
 const seen=new Set(recommendations.map(t=>t.toLocaleLowerCase('ru-RU')));
 for(const title of ['Помыть голову','Разобрать посуду','Пройти урок QA','Сделать брелок','Полить цветы','Убраться 10 минут']){if(!seen.has(title.toLocaleLowerCase('ru-RU')))recommendations.push(title)}
 const grid=el('div','quick-grid');
-for(const title of recommendations){const button=el('button','quick-card',title);button.type='button';const exists=items.some(x=>!x.done&&x.date<=nowKey()&&x.title.trim().toLocaleLowerCase('ru-RU')===title.trim().toLocaleLowerCase('ru-RU'));button.append(el('small','',exists?'Уже в делах на сегодня':'＋ Добавить на сегодня'));button.disabled=exists;button.onclick=()=>{selected=nowKey();panel='home';addTask(title,[],selected);$('announcement').textContent='Добавлено на сегодня: '+title;document.querySelector('[data-panel="home"]').focus()};grid.append(button)}
+for(const title of recommendations){const button=el('button','quick-card',title);button.type='button';const exists=items.some(x=>!x.done&&x.date<=nowKey()&&x.title.trim().toLocaleLowerCase('ru-RU')===title.trim().toLocaleLowerCase('ru-RU'));button.append(el('small','',exists?'Уже в делах на сегодня':'＋ Добавить на сегодня'));button.disabled=exists;button.onclick=()=>{addTask(title,[],nowKey(),false);button.disabled=true;button.querySelector('small').textContent='Уже в делах на сегодня';$('announcement').textContent='Добавлено на сегодня: '+title};grid.append(button)}
 box.append(grid);
 }
 function render(){
@@ -255,18 +255,19 @@ document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>{panel=b.dataset.p
 function changeWeek(offset){const d=dateFromKey(selected);d.setDate(d.getDate()+offset*7);selected=dateKey(d);render()}
 $('prevWeek').onclick=()=>changeWeek(-1);$('nextWeek').onclick=()=>changeWeek(1);$('goToday').onclick=()=>{selected=nowKey();render()};
 const backdrop=$('modalBackdrop');function renderDraft(){const host=$('draftSteps');host.replaceChildren();draftSteps.forEach((t,i)=>{const row=el('div','draft-step'),b=el('button','','×');b.type='button';b.setAttribute('aria-label','Удалить шаг');b.onclick=()=>{draftSteps.splice(i,1);renderDraft()};row.append(el('span','',t),b);host.append(row)})}
-function openModal(){if(panel!=='home'){selected=nowKey();panel='home';render()}draftSteps=[];renderDraft();$('taskInput').value='';$('draftStepInput').value='';backdrop.hidden=false;document.body.style.overflow='hidden';setTimeout(()=>$('taskInput').focus(),60)}
+let modalTrigger=null;
+function openModal(){modalTrigger=document.activeElement;if(panel!=='home'){selected=nowKey();panel='home';render()}draftSteps=[];renderDraft();$('taskInput').value='';$('draftStepInput').value='';backdrop.hidden=false;document.body.style.overflow='hidden';setTimeout(()=>$('taskInput').focus(),60)}
 let modalExit=null;
 function closeModal(){
   if(backdrop.hidden||modalExit)return;
-  const finish=()=>{backdrop.hidden=true;document.body.style.overflow='';$('openModal').focus();modalExit=null};
+  const finish=()=>{backdrop.hidden=true;document.body.style.overflow='';(modalTrigger||$('openModal')).focus();modalExit=null};
   if(matchMedia('(prefers-reduced-motion: reduce)').matches||!backdrop.animate){finish();return}
   modalExit=backdrop.animate([{opacity:1},{opacity:0}],{duration:280,easing:'ease-out'});
   backdrop.querySelector('.modal').animate([{transform:'none',filter:'blur(0)'},{transform:'translateY(12px) scale(.98)',filter:'blur(4px)'}],{duration:280,easing:'ease-out'});
   modalExit.onfinish=finish;
 }
 function addDraft(){const inp=$('draftStepInput'),v=inp.value.trim();if(v){draftSteps.push(v);inp.value='';renderDraft();inp.focus()}}
-$('openModal').onclick=openModal;$('closeModal').onclick=closeModal;$('cancelModal').onclick=closeModal;$('addDraftStep').onclick=addDraft;$('draftStepInput').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();addDraft()}};backdrop.onclick=e=>{if(e.target===backdrop)closeModal()};document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!backdrop.hidden)closeModal()});
+$('openModal').onclick=openModal;$('progressOrb').onclick=openModal;$('closeModal').onclick=closeModal;$('cancelModal').onclick=closeModal;$('addDraftStep').onclick=addDraft;$('draftStepInput').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();addDraft()}};backdrop.onclick=e=>{if(e.target===backdrop)closeModal()};document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!backdrop.hidden)closeModal()});
 $('newTask').onsubmit=e=>{e.preventDefault();const title=$('taskInput').value.trim();if(!title)return;const extra=$('draftStepInput').value.trim();if(extra)draftSteps.push(extra);addTask(title,draftSteps);closeModal();panel='home';render()};
 const liquidTiming={duration:650,easing:'cubic-bezier(.22,.75,.18,1)'};
 const dock=document.querySelector('.section-tabs'),lens=el('i','dock-lens');
