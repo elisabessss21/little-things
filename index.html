@@ -178,6 +178,24 @@ body{background:#75565d}
 .calendar-lens{position:absolute;left:0;top:6px;width:48px;height:68px;border-radius:24px;pointer-events:none;border:1px solid #fff0f5c4;background:radial-gradient(ellipse at 22% 10%,#fff9,transparent 42%),linear-gradient(130deg,#fbe6f2bd,#d5b3c69c 55%,#f7dce9cf);box-shadow:inset 1px 2px 5px #fff9,inset -2px -3px 7px #a66a9340,0 3px 7px #38243230;backdrop-filter:blur(16px) saturate(150%);transition:transform .65s var(--liquid-ease)}
 .calendar-lens:after{content:'';position:absolute;inset:1px;border-radius:inherit;background:linear-gradient(110deg,transparent 20%,#fff6 45%,transparent 70%);background-size:250% 100%;animation:lens-flow 6s ease-in-out infinite alternate}
 @media(prefers-reduced-motion:reduce){.calendar-lens{transition:none}.calendar-lens:after{animation:none}}
+/* Two neighboring screens follow the finger and settle with gentle easing. */
+.screen-viewport{position:relative;overflow:hidden;overflow:clip;transition:height .62s cubic-bezier(.22,.75,.18,1);touch-action:pan-y pinch-zoom}
+.screen-track{display:flex;align-items:flex-start;width:100%;will-change:transform;transition:transform .72s cubic-bezier(.18,.78,.2,1)}
+.screen-track.dragging{transition:none}
+.screen-track>#homePanel,.screen-track>#quickPanel{flex:0 0 100%;min-width:0;margin:0;box-sizing:border-box}
+/* Keep native calendar scrolling available through every ancestor. */
+.screen-viewport{touch-action:auto}
+.task{cursor:pointer}.task input,.task button{cursor:pointer}
+.progress-total{font-size:13px}.progress-number{font-size:54px}
+.modal-backdrop{background:#30202c35;backdrop-filter:blur(9px) saturate(115%);-webkit-backdrop-filter:blur(9px) saturate(115%)}
+.modal{position:relative;isolation:isolate;color:#fff0f6;background:radial-gradient(ellipse at 12% 0%,#fff5,transparent 48%),radial-gradient(ellipse at 100% 100%,#ecc2e447,transparent 55%),linear-gradient(135deg,#bd8caa80,#735267b8 60%,#bb8ba575);border:1px solid #ffe7f0b3;box-shadow:inset 1px 2px 3px #fff8,inset -2px -3px 12px #eed3e54a,0 25px 80px #28132366,0 0 0 1px #fff1;backdrop-filter:blur(36px) saturate(160%);-webkit-backdrop-filter:blur(36px) saturate(160%)}
+.modal:before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(115deg,#fff3,transparent 28%,transparent 70%,#ffe7f029);z-index:-1}
+.modal-eyebrow{color:#f4dce7}.modal-input,.draft-row input{color:#fff4f8;background:linear-gradient(130deg,#ffffff24,#ffffff0d);border:1px solid #ffe6ef66;box-shadow:inset 0 1px 3px #fff3,inset 0 -1px 5px #42263b20}
+.modal-input::placeholder,.draft-row input::placeholder{color:#f5dce5ba}
+.close-modal,.draft-row button,.draft-step,.cancel-btn{background:linear-gradient(135deg,#ffffff38,#ffffff12);color:#fff0f6;border:1px solid #ffe9f066;box-shadow:inset 0 1px 2px #fff4}
+.draft-step button{color:#fff0f6}.modal-actions .cancel-btn{color:#fff0f6}.save-btn{background:linear-gradient(130deg,#ebcada80,#bb88a575);border:1px solid #ffe8f0aa;box-shadow:inset 1px 2px 4px #fff6,0 4px 12px #3e243630;color:#fff}
+.modal-backdrop:not([hidden]) .modal{animation-duration:.75s}
+@media(prefers-reduced-motion:reduce){.screen-track,.screen-viewport{transition:none}}
 </style>
 </head>
 <body>
@@ -188,6 +206,7 @@ body{background:#75565d}
 <button type="button" class="navbtn active" data-panel="home" aria-pressed="true">Сегодня</button>
 <button type="button" class="navbtn" data-panel="familiar" aria-pressed="false">Знакомые дела</button>
 </nav>
+<div class="screen-viewport" id="screenViewport"><div class="screen-track" id="screenTrack">
 <section id="homePanel" aria-label="Дела по дням">
 <div class="calendar-controls"><button type="button" id="prevWeek" aria-label="Предыдущий месяц">‹</button><span id="calendarMonth" aria-live="polite"></span><button type="button" id="nextWeek" aria-label="Следующий месяц">›</button><button type="button" id="goToday">Сегодня</button></div>
 <div class="week-strip" id="weekStrip" aria-label="Дни месяца — прокрути, чтобы выбрать дату"></div>
@@ -195,14 +214,15 @@ body{background:#75565d}
 <div class="list-title"><h2 id="listHeading">Мои дела</h2><span id="counter">0 из 0</span></div>
 <section class="tasks" id="tasks" aria-label="Список дел"></section>
 </section>
-<section class="quick-panel glass" id="quickPanel" hidden></section>
+<section class="quick-panel glass" id="quickPanel" aria-label="Знакомые дела"></section>
+</div></div>
 <p class="footer">Каждое маленькое дело заслуживает своего пузырька ♡</p>
 <p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
 </main>
 
 <div id="modalBackdrop" class="modal-backdrop" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-head"><div><span class="modal-eyebrow">bubble. ✧</span><h2 id="modalTitle">Новое дело</h2></div><button type="button" class="close-modal" id="closeModal" aria-label="Закрыть">×</button></div>
 <form id="newTask"><label class="field-label" for="taskInput">Что хочется сделать?</label><input class="modal-input" id="taskInput" maxlength="180" placeholder="Например, помыть голову" autocomplete="off" required>
-<div class="modal-step-title">Шаги <span>по желанию</span></div><div id="draftSteps" class="draft-steps"></div><div class="draft-row"><input id="draftStepInput" maxlength="150" placeholder="Добавить небольшой шаг"><button id="addDraftStep" type="button" aria-label="Добавить шаг">+</button></div>
+<div class="modal-step-title">Шаги <span>по желанию</span></div><div id="draftSteps" class="draft-steps"></div><div class="draft-row"><input id="draftStepInput" maxlength="150" placeholder="с чего начнем?" aria-label="Шаги: с чего начнем?"><button id="addDraftStep" type="button" aria-label="Добавить шаг">+</button></div>
 <div class="modal-actions"><button type="button" class="cancel-btn" id="cancelModal">Отмена</button><button class="save-btn" type="submit">Сохранить</button></div></form></section></div>
 <script>
 (()=>{'use strict';
@@ -276,18 +296,24 @@ function renderWeek(){
     calendarFrame=requestAnimationFrame(()=>centerCalendar(!rebuild));
   }
 }
-function renderTasks(){const host=$('tasks');host.replaceChildren();const list=currentItems(),done=list.filter(x=>x.done).length;$('counter').textContent=done+' из '+list.length;$('progressNumber').textContent=done;$('progressTotal').textContent='из '+list.length;$('progressOrb').style.setProperty('--progress',(list.length?done/list.length*100:0)+'%');$('progressOrb').setAttribute('aria-label','Добавить дело. Выполнено '+done+' из '+list.length);
+function calculateProgress(list){
+  let total=0,completed=0;
+  for(const item of list){const steps=Array.isArray(item.steps)?item.steps:[];total+=1+steps.length;completed+=item.done?1+steps.length:steps.filter(step=>step.done).length}
+  return {total,completed,percent:total?completed/total*100:0};
+}
+function setTaskDone(item,done){item.done=done;if(Array.isArray(item.steps))item.steps.forEach(step=>step.done=done);save();render()}
+function renderTasks(){const host=$('tasks');host.replaceChildren();const list=currentItems(),done=list.filter(x=>x.done).length;$('counter').textContent=done+' из '+list.length;const progress=calculateProgress(list);$('progressNumber').textContent=Math.round(progress.percent)+'%';$('progressTotal').textContent=progress.completed+' из '+progress.total+' · дела и шаги';$('progressOrb').style.setProperty('--progress',progress.percent+'%');$('progressOrb').setAttribute('aria-label','Добавить дело. Общий прогресс '+Math.round(progress.percent)+' процентов, выполнено '+progress.completed+' из '+progress.total+' дел и шагов');
 if(!list.length){const empty=el('div','empty glass');empty.append(el('strong','','Пока здесь свободно 🫧'),el('p','','Добавь маленькое дело кнопкой +'));host.append(empty);return}
-for(const item of list){const card=el('article','task glass'+(item.done?' done':'')),head=el('div','taskhead'),check=el('input','check');check.type='checkbox';check.checked=!!item.done;check.setAttribute('aria-label',(item.done?'Вернуть дело: ':'Лопнуть пузырёк: ')+item.title);check.onchange=()=>{if(check.checked)pop(check,()=>{item.done=true;save();render()});else{item.done=false;save();render()}};const content=el('div','task-name'),title=el('span','tasktitle',item.title);content.append(title);const steps=Array.isArray(item.steps)?item.steps:(item.steps=[]);if(steps.length)content.append(el('span','task-meta',steps.length+' '+(steps.length===1?'шаг':steps.length<5?'шага':'шагов')+' · '+steps.filter(s=>s.done).length+' сделано'));
-card.dataset.taskId=item.id;head.append(check,content);const toggle=el('button','disclosure','›');toggle.type='button';toggle.setAttribute('aria-label','Открыть шаги и действия');toggle.setAttribute('aria-expanded',String(expanded.has(item.id)));toggle.onclick=()=>{if(expanded.has(item.id))expanded.delete(item.id);else expanded.add(item.id);render()};head.append(toggle);card.append(head);
-if(expanded.has(item.id)){const details=el('div','task-details');if(steps.length){const stepList=el('div','steps');for(const s of steps){const row=el('label','step'+(s.done?' finished':'')),c=el('input','check');c.type='checkbox';c.checked=!!s.done;c.setAttribute('aria-label',(s.done?'Вернуть шаг: ':'Лопнуть шаг: ')+s.title);c.onchange=()=>{if(c.checked)pop(c,()=>{s.done=true;save();render()});else{s.done=false;save();render()}};row.append(c,el('span','',s.title));stepList.append(row)}details.append(stepList)}
-const actions=el('div','actions'),add=el('button','soft','＋ Добавить шаг');add.type='button';add.onclick=()=>{const old=details.querySelector('.stepform');if(old){old.remove();return}const form=el('form','stepform'),inp=el('input');inp.placeholder='Небольшой шаг';inp.required=true;inp.maxLength=150;const ok=el('button','','Добавить');ok.type='submit';form.append(inp,ok);form.onsubmit=e=>{e.preventDefault();const t=inp.value.trim();if(t){steps.push({title:t,done:false});item.suggestedSteps=false;save();render()}};details.append(form);inp.focus()};actions.append(add);
-if(!steps.length){const suggest=el('button','soft','✧ Помочь разбить на шаги');suggest.type='button';suggest.onclick=()=>{const t=item.title.toLowerCase();let v;if(/голов|волос|душ|мытьс/.test(t))v=['Приготовить полотенце','Собрать средства','Помыть волосы','Высушить волосы'];else if(/посуд/.test(t))v=['Подойти к раковине','Убрать лишнее','Помыть несколько предметов'];else if(/убор|прибра|комнат/.test(t))v=['Выбрать одну зону','Убрать три вещи','Протереть поверхность'];else v=['Подготовить нужное','Сделать первый шаг','Продолжить, если есть силы'];item.steps=v.map(title=>({title,done:false}));item.suggestedSteps=true;save();render()};actions.append(suggest)}
+for(const item of list){const card=el('article','task glass'+(item.done?' done':'')),head=el('div','taskhead'),check=el('input','check');check.type='checkbox';check.checked=!!item.done;check.setAttribute('aria-label',(item.done?'Вернуть дело: ':'Лопнуть пузырёк: ')+item.title);check.onchange=()=>{if(check.checked)pop(check,()=>setTaskDone(item,true));else setTaskDone(item,false)};const content=el('div','task-name'),title=el('span','tasktitle',item.title);content.append(title);const steps=Array.isArray(item.steps)?item.steps:(item.steps=[]);if(steps.length)content.append(el('span','task-meta',steps.length+' '+(steps.length===1?'шаг':steps.length<5?'шага':'шагов')+' · '+steps.filter(s=>s.done).length+' сделано'));
+card.dataset.taskId=item.id;head.append(check,content);const toggle=el('button','disclosure','›');toggle.type='button';toggle.setAttribute('aria-label','Открыть шаги и действия');toggle.setAttribute('aria-expanded',String(expanded.has(item.id)));const toggleDetails=()=>{if(expanded.has(item.id))expanded.delete(item.id);else expanded.add(item.id);render()};toggle.onclick=toggleDetails;card.onclick=e=>{if(e.target.closest('button,input,label,form,textarea,select,a'))return;toggleDetails()};head.append(toggle);card.append(head);
+if(expanded.has(item.id)){const details=el('div','task-details');if(steps.length){const stepList=el('div','steps');for(const s of steps){const row=el('label','step'+(s.done?' finished':'')),c=el('input','check');c.type='checkbox';c.checked=!!s.done;c.setAttribute('aria-label',(s.done?'Вернуть шаг: ':'Лопнуть шаг: ')+s.title);c.onchange=()=>{if(c.checked)pop(c,()=>{s.done=true;save();render()});else{s.done=false;item.done=false;save();render()}};row.append(c,el('span','',s.title));stepList.append(row)}details.append(stepList)}
+const actions=el('div','actions'),add=el('button','soft','＋ Добавить шаг');add.type='button';add.onclick=()=>{const old=details.querySelector('.stepform');if(old){old.remove();return}const form=el('form','stepform'),inp=el('input');inp.placeholder='Небольшой шаг';inp.required=true;inp.maxLength=150;const ok=el('button','','Добавить');ok.type='submit';form.append(inp,ok);form.onsubmit=e=>{e.preventDefault();const t=inp.value.trim();if(t){steps.push({title:t,done:false});item.done=false;item.suggestedSteps=false;save();render()}};details.append(form);inp.focus()};actions.append(add);
+if(!steps.length){const suggest=el('button','soft','✧ Помочь разбить на шаги');suggest.type='button';suggest.onclick=()=>{const t=item.title.toLowerCase();let v;if(/голов|волос|душ|мытьс/.test(t))v=['Приготовить полотенце','Собрать средства','Помыть волосы','Высушить волосы'];else if(/посуд/.test(t))v=['Подойти к раковине','Убрать лишнее','Помыть несколько предметов'];else if(/убор|прибра|комнат/.test(t))v=['Выбрать одну зону','Убрать три вещи','Протереть поверхность'];else v=['Подготовить нужное','Сделать первый шаг','Продолжить, если есть силы'];item.steps=v.map(title=>({title,done:false}));item.done=false;item.suggestedSteps=true;save();render()};actions.append(suggest)}
 if(item.suggestedSteps&&steps.length){const undo=el('button','soft','× Убрать предложенные шаги');undo.type='button';undo.onclick=()=>{item.steps=[];item.suggestedSteps=false;save();render()};actions.append(undo)}
 const del=el('button','soft','Удалить дело');del.type='button';del.onclick=()=>{if(confirm('Удалить дело «'+item.title+'»?')){items=items.filter(x=>x.id!==item.id);expanded.delete(item.id);save();render()}};actions.append(del);details.append(actions);card.append(details)}host.append(card)}
 }
 function renderPanel(){
-const box=$('quickPanel');box.replaceChildren();box.hidden=panel==='home';$('homePanel').hidden=panel!=='home';if(panel==='home')return;
+const box=$('quickPanel');box.replaceChildren();
 box.append(el('h3','','Знакомые дела'),el('p','','Нажми на рекомендацию — она сразу появится в делах на сегодня.'));
 const counts=new Map();
 for(const item of items){const key=item.title.trim().toLocaleLowerCase('ru-RU');if(!key)continue;const entry=counts.get(key)||{title:item.title,count:0};entry.count++;counts.set(key,entry)}
@@ -295,22 +321,19 @@ const recommendations=[...counts.values()].sort((a,b)=>b.count-a.count).slice(0,
 const seen=new Set(recommendations.map(t=>t.toLocaleLowerCase('ru-RU')));
 for(const title of ['Помыть голову','Разобрать посуду','Пройти урок QA','Сделать брелок','Полить цветы','Убраться 10 минут']){if(!seen.has(title.toLocaleLowerCase('ru-RU')))recommendations.push(title)}
 const grid=el('div','quick-grid');
-for(const title of recommendations){const button=el('button','quick-card',title);button.type='button';const exists=items.some(x=>!x.done&&x.date<=nowKey()&&x.title.trim().toLocaleLowerCase('ru-RU')===title.trim().toLocaleLowerCase('ru-RU'));button.append(el('small','',exists?'Уже в делах на сегодня':'＋ Добавить на сегодня'));button.disabled=exists;button.onclick=()=>{addTask(title,[],nowKey(),false);button.disabled=true;button.querySelector('small').textContent='Уже в делах на сегодня';$('announcement').textContent='Добавлено на сегодня: '+title};grid.append(button)}
+for(const title of recommendations){const button=el('button','quick-card',title);button.type='button';const exists=items.some(x=>!x.done&&x.date<=nowKey()&&x.title.trim().toLocaleLowerCase('ru-RU')===title.trim().toLocaleLowerCase('ru-RU'));button.append(el('small','',exists?'Уже в делах на сегодня':'＋ Добавить на сегодня'));button.disabled=exists;button.onclick=()=>{addTask(title,[],nowKey(),false);renderTasks();button.disabled=true;button.querySelector('small').textContent='Уже в делах на сегодня';$('announcement').textContent='Добавлено на сегодня: '+title};grid.append(button)}
 box.append(grid);
 }
 function render(){
 const previousCards=new Map([...document.querySelectorAll('.task')].map(card=>[card.dataset.taskId,{rect:card.getBoundingClientRect(),expanded:!!card.querySelector('.task-details'),done:card.classList.contains('done')}]));
 const previousPanel=$('quickPanel').textContent;
 const previousDate=$('dateLabel').textContent;
-const d=dateFromKey(selected);$('dateLabel').textContent=fmtDate(selected);$('listHeading').textContent=selected===nowKey()?'Мои дела':'Дела на '+d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'});renderWeek();renderTasks();renderPanel();document.querySelectorAll('.navbtn').forEach(b=>{const active=b.dataset.panel===panel;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});animateRender(previousCards,previousPanel,previousDate);moveLens()}
+const d=dateFromKey(selected);$('dateLabel').textContent=fmtDate(selected);$('listHeading').textContent=selected===nowKey()?'Мои дела':'Дела на '+d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'});renderWeek();renderTasks();renderPanel();document.querySelectorAll('.navbtn').forEach(b=>{const active=b.dataset.panel===panel;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});animateRender(previousCards,previousPanel,previousDate);moveLens();settleScreens()}
+function sizeScreens(){const active=$(panel==='home'?'homePanel':'quickPanel');$('screenViewport').style.height=active.offsetHeight+'px'}
+function settleScreens(){const track=$('screenTrack');track.classList.remove('dragging');track.style.transform=panel==='home'?'translate3d(0,0,0)':'translate3d(-100%,0,0)';$('homePanel').inert=panel!=='home';$('quickPanel').inert=panel==='home';$('homePanel').setAttribute('aria-hidden',String(panel!=='home'));$('quickPanel').setAttribute('aria-hidden',String(panel==='home'));sizeScreens()}
 function switchPanel(next){
   if(next!=='home'&&next!=='familiar')return;
-  const changed=panel!==next;
   panel=next;if(panel==='home')selected=nowKey();render();
-  if(changed&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
-    const surface=$(panel==='home'?'homePanel':'quickPanel');
-    surface.animate?.([{opacity:.3,transform:'translateX('+(panel==='home'?-22:22)+'px)',filter:'blur(3px)'},{opacity:1,transform:'translateX(0)',filter:'blur(0)'}],liquidTiming);
-  }
 }
 document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>switchPanel(b.dataset.panel));
 // Only intentional horizontal touch gestures change sections.
@@ -318,7 +341,7 @@ const swipeArea=document.querySelector('.app');
 let swipe=null,suppressClickUntil=0;
 swipeArea.addEventListener('pointerdown',e=>{
   if(e.pointerType!=='touch')return;
-  if(!e.isPrimary){swipe=null;return}
+  if(!e.isPrimary){swipe=null;settleScreens();return}
   if(!$('modalBackdrop').hidden||e.target.closest('#weekStrip,input,textarea,select,[contenteditable="true"]'))return;
   swipe={id:e.pointerId,x:e.clientX,y:e.clientY,axis:null};
 },{passive:true});
@@ -328,20 +351,29 @@ swipeArea.addEventListener('pointermove',e=>{
   if(!swipe.axis&&Math.max(Math.abs(dx),Math.abs(dy))>12){
     swipe.axis=Math.abs(dx)>Math.abs(dy)*1.5?'x':'y';
   }
-  if(swipe.axis==='y'){swipe=null;return}
-  if(swipe.axis==='x')suppressClickUntil=Date.now()+500;
+  if(swipe.axis==='y'){swipe=null;settleScreens();return}
+  if(swipe.axis==='x'){
+    swipeArea.setPointerCapture?.(e.pointerId);
+    suppressClickUntil=Date.now()+500;
+    const track=$('screenTrack'),width=$('screenViewport').clientWidth;
+    const outward=(panel==='home'&&dx>0)||(panel==='familiar'&&dx<0);
+    const travel=Math.max(-width,Math.min(width,dx*(outward?.16:1)));
+    track.classList.add('dragging');
+    track.style.transform='translate3d(calc('+(panel==='home'?'0%':'-100%')+' + '+travel+'px),0,0)';
+  }
 },{passive:true});
 swipeArea.addEventListener('pointerup',e=>{
   if(!swipe||e.pointerId!==swipe.id)return;
   const gesture=swipe;swipe=null;
   const dx=e.clientX-gesture.x,dy=e.clientY-gesture.y;
   if(gesture.axis==='x')suppressClickUntil=Date.now()+500;
-  if(Math.abs(dx)<60||Math.abs(dx)<=Math.abs(dy)*1.5||!$('modalBackdrop').hidden)return;
+  if(Math.abs(dx)<60||Math.abs(dx)<=Math.abs(dy)*1.5||!$('modalBackdrop').hidden){settleScreens();return}
   suppressClickUntil=Date.now()+500;
   if(dx<0&&panel==='home')switchPanel('familiar');
   else if(dx>0&&panel==='familiar')switchPanel('home');
+  else settleScreens();
 },{passive:true});
-swipeArea.addEventListener('pointercancel',()=>{swipe=null},{passive:true});
+swipeArea.addEventListener('pointercancel',()=>{swipe=null;settleScreens()},{passive:true});
 swipeArea.addEventListener('click',e=>{
   if(e.detail!==0&&Date.now()<suppressClickUntil){e.preventDefault();e.stopImmediatePropagation()}
 },true);
@@ -370,6 +402,7 @@ function moveLens(){
   lens.style.width=active.offsetWidth+'px';lens.style.transform='translateX('+active.offsetLeft+'px)';
 }
 new ResizeObserver(moveLens).observe(dock);
+const screensObserver=new ResizeObserver(sizeScreens);screensObserver.observe($('homePanel'));screensObserver.observe($('quickPanel'));
 new ResizeObserver(()=>{cancelAnimationFrame(calendarFrame);calendarFrame=requestAnimationFrame(()=>centerCalendar(false))}).observe($('weekStrip'));
 function meltIn(node){
   node.animate([{opacity:0,filter:'blur(4px)',translate:'0 7px'},{opacity:1,filter:'blur(0)',translate:'0 0'}],liquidTiming);
@@ -389,7 +422,7 @@ function animateRender(previousCards,previousPanel,previousDate){
     if(details&&!old.expanded)meltIn(details);
     if(old.done!==card.classList.contains('done'))card.classList.add('flowing');
   });
-  if(previousPanel!==$('quickPanel').textContent&&!$('quickPanel').hidden)meltIn($('quickPanel'));
+  // Screen movement belongs to the shared track, not separate fades.
   if(previousDate!==$('dateLabel').textContent)meltIn($('dateLabel'));
 }
 // Pointer lighting is restricted to fine pointers and respects reduced motion.
@@ -419,3 +452,4 @@ render();
 })();
 </script>
 </body></html>
+
