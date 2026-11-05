@@ -100,6 +100,42 @@ body{background:#75565d}
 @media(min-width:650px){.app{margin:0 auto;min-height:100vh;border:0;border-radius:0;box-shadow:none;overflow:visible}.bottom-dock{bottom:25px}}
 @media(max-width:365px){.app{padding-top:32px;padding-inline:10px}.header{padding-inline:6px}.logo{font-size:52px}.taskhead{gap:14px}.tasktitle{font-size:16px}.week-strip{gap:5px}}
 
+
+/* Layered glass and motion. Content stays on a stable, readable plane. */
+@property --progress { syntax: '<percentage>'; inherits: true; initial-value: 0%; }
+.progress-wrap{perspective:900px}
+.progress-orb{transform-style:preserve-3d;transform:rotateX(var(--tilt-x,0deg)) rotateY(var(--tilt-y,0deg));transition:transform .7s cubic-bezier(.2,.8,.2,1),--progress .85s cubic-bezier(.2,.8,.2,1);box-shadow:inset 3px 4px 6px #ffe2eab0,inset -5px -6px 8px #eed0d599,inset 11px 0 9px #51303d44,0 0 0 4px #dcb1c24d,0 24px 28px -16px #2e152b8c,0 40px 45px -24px #efafc262}
+.progress-orb:before{transform:translateZ(9px);transition:background .5s}
+.progress-orb:after{clip-path:none;inset:3px;border:1px solid #fff6;background:radial-gradient(ellipse at var(--light-x,25%) var(--light-y,18%),#fff9,transparent 18%),radial-gradient(ellipse at 78% 85%,#ffe7f1aa,transparent 12%);opacity:.75;transform:translateZ(14px);animation:glass-light 8s ease-in-out infinite alternate;pointer-events:none}
+.orb-shell{position:absolute;inset:-3px;pointer-events:none;border-radius:50%;border:1px solid #ffe1eb99;box-shadow:inset -6px -4px 6px #ffe1f26b,inset 4px 1px 4px #fff8;transform:translateZ(5px)}
+.orb-depth{position:absolute;inset:18px;border-radius:50%;pointer-events:none;border:1px solid #ffd1e336;box-shadow:inset 12px 15px 28px #40223b30,inset -7px -8px 18px #e8a2be30;transform:translateZ(-18px);background:radial-gradient(ellipse at 33% 65%,#b3c4df20,transparent 55%)}
+.orb-glint{position:absolute;inset:12px;border-radius:50%;pointer-events:none;background:conic-gradient(from 25deg,transparent 0 35%,#fff0 39%,#fff9 43%,#eab7d37d 46%,transparent 51% 77%,#fff8 84%,transparent 90%);mask:radial-gradient(farthest-side,transparent 92%,#000 96%);-webkit-mask:radial-gradient(farthest-side,transparent 92%,#000 96%);transform:translateZ(18px);animation:rim-shimmer 12s ease-in-out infinite alternate}
+.progress-number,.progress-total{position:relative;transform:translateZ(30px);z-index:1}
+.progress-wrap{animation:orb-float 7s ease-in-out infinite}
+.task{transition:background .4s,box-shadow .4s,transform .4s cubic-bezier(.2,.8,.2,1);transform:perspective(800px) rotateX(var(--card-x,0deg)) rotateY(var(--card-y,0deg));box-shadow:inset 0 1px 1px #fff7,inset 0 -1px 1px #e7b6cf30,0 10px 20px -14px #30112670}
+.task:before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(ellipse at var(--light-x,25%) var(--light-y,0%),#fff3,transparent 60%);opacity:.55;transition:opacity .4s}
+.check{transition:transform .3s cubic-bezier(.18,.9,.3,1.5),box-shadow .3s; background:radial-gradient(ellipse at var(--light-x,25%) var(--light-y,15%),#fff9,transparent 23%),radial-gradient(ellipse at 80% 84%,#f4d3e9c0,transparent 20%),radial-gradient(ellipse at 15% 75%,#b8d5d78c,transparent 25%),radial-gradient(circle at 45% 45%,#b4859b12 45%,#d4a0bd55 70%,#fff6 95%);box-shadow:inset 2px 2px 3px #f9e8f8c0,inset -3px -4px 6px #e6b6cd9c,0 7px 9px -4px #3c183967}
+.check:active{transform:scale(.86) scaleX(1.08)}
+.check:checked{background:#d7a6b92e}
+.add-button{transition:transform .4s cubic-bezier(.2,.8,.2,1),box-shadow .4s}
+.add-button:active{transform:scale(.91) rotate(8deg)}
+.navbtn{transition:background .35s,box-shadow .35s,transform .35s}.navbtn.active{box-shadow:inset 0 2px 3px #fff8,inset 0 -3px 7px #d3a0bd70,0 6px 10px -4px #43243855}
+.modal-backdrop:not([hidden]) .modal{animation:glass-arrive .35s cubic-bezier(.16,1,.3,1)}
+.ripple.one{animation:background-drift 22s ease-in-out infinite alternate}.ripple.two{animation:background-drift 27s ease-in-out infinite alternate-reverse}
+.pop{animation:membrane-pop .42s cubic-bezier(.2,.7,.3,1) forwards}
+.spark{width:var(--size);height:var(--size);border:1px solid #ffe4efb3;background:radial-gradient(circle at 30% 20%,#fff,#e8b7d24d 38%,#a47b9f55 65%,#ffe0ebaa);box-shadow:inset 0 1px 2px #fff9,0 3px 5px #41203933;animation:droplet-flight var(--duration) cubic-bezier(.12,.6,.3,1) forwards}
+.burst-ring{position:fixed;z-index:98;border:1px solid #ffe1efa6;border-radius:50%;pointer-events:none;box-shadow:inset 0 0 5px #fff4,0 0 8px #f4c9df55;animation:burst-ring .65s ease-out forwards}
+@media(hover:hover){.task:hover{box-shadow:inset 0 1px 2px #fff9,0 15px 25px -12px #30112660}.task:hover:before{opacity:1}.add-button:hover{transform:translateY(-2px) rotate(-5deg)}}
+@keyframes glass-light{from{opacity:.55}to{opacity:.95}}
+@keyframes rim-shimmer{from{rotate:-12deg;opacity:.6}to{rotate:20deg;opacity:1}}
+@keyframes orb-float{0%,100%{translate:0 0}50%{translate:0 -5px}}
+@keyframes background-drift{from{translate:0 0;scale:1}to{translate:-12px 16px;scale:1.06}}
+@keyframes glass-arrive{from{opacity:0;transform:perspective(900px) translateY(25px) rotateX(-7deg) scale(.96)}to{opacity:1;transform:none}}
+@keyframes membrane-pop{0%{transform:scale(1)}23%{transform:scale(.82,1.08)}57%{transform:scale(1.23,.94);opacity:1;filter:brightness(1.3)}100%{transform:scale(1.55);opacity:0;filter:brightness(1.6)}}
+@keyframes droplet-flight{0%,25%{transform:translate(-50%,-50%) scale(.35);opacity:0}30%{opacity:1}65%{opacity:.9}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.2);opacity:0}}
+@keyframes burst-ring{0%,25%{transform:translate(-50%,-50%) scale(.8);opacity:0}35%{opacity:.8}100%{transform:translate(-50%,-50%) scale(1.9);opacity:0}}
+@media(prefers-reduced-motion:reduce){.progress-wrap,.ripple,.progress-orb:after,.orb-glint{animation:none}.progress-orb,.task{transform:none;transition:none}.modal-backdrop:not([hidden]) .modal{animation:none}}
+
 </style>
 </head>
 <body>
@@ -107,7 +143,7 @@ body{background:#75565d}
 <main class="app">
 <header class="header"><div><div class="logo">bubble.</div><p class="date-label" id="dateLabel">Сегодня</p></div><button id="openModal" class="add-button" aria-label="Добавить дело" title="Добавить дело">+</button></header>
 <div class="week-strip" id="weekStrip" aria-label="Дни недели"></div>
-<div class="progress-wrap"><div id="progressOrb" class="progress-orb" style="--progress:0%" role="img" aria-label="Прогресс выполнения"><span id="progressNumber" class="progress-number">0</span><span id="progressTotal" class="progress-total">из 0</span></div></div>
+<div class="progress-wrap"><div id="progressOrb" class="progress-orb" style="--progress:0%" role="img" aria-label="Прогресс выполнения"><i class="orb-depth" aria-hidden="true"></i><i class="orb-shell" aria-hidden="true"></i><i class="orb-glint" aria-hidden="true"></i><span id="progressNumber" class="progress-number">0</span><span id="progressTotal" class="progress-total">из 0</span></div></div>
 <div class="list-title"><h2 id="listHeading">Мои дела</h2><span id="counter">0 из 0</span></div>
 <section class="tasks" id="tasks" aria-label="Список дел"></section>
 <section class="quick-panel glass" id="quickPanel" hidden></section>
@@ -134,7 +170,27 @@ const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(items))}catch(e){ale
 function currentItems(){return selected===nowKey()?items.filter(x=>!x.done||x.date===selected):items.filter(x=>x.date===selected)}
 function fmtDate(k){const d=dateFromKey(k),same=k===nowKey();return (same?'Сегодня, ':'')+d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'})}
 function addTask(title,steps=[],date=selected){const t=title.trim();if(!t)return;items.unshift({id:uid(),title:t,date,done:false,steps:steps.map(s=>({title:s,done:false}))});save();render()}
-function pop(node,callback){if(matchMedia('(prefers-reduced-motion: reduce)').matches){callback();return}const r=node.getBoundingClientRect();node.classList.add('pop');for(let i=0;i<7;i++){const s=el('i','spark');s.style.left=(r.left+r.width/2)+'px';s.style.top=(r.top+r.height/2)+'px';s.style.setProperty('--a',i*360/7+'deg');document.body.append(s);setTimeout(()=>s.remove(),600)}setTimeout(callback,320)}
+function pop(node,callback){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){callback();return}
+  const rect=node.getBoundingClientRect(),x=rect.left+rect.width/2,y=rect.top+rect.height/2;
+  node.disabled=true;
+  node.classList.add('pop');
+  const ring=el('i','burst-ring');
+  Object.assign(ring.style,{left:x+'px',top:y+'px',width:rect.width+'px',height:rect.height+'px'});
+  document.body.append(ring);
+  setTimeout(()=>ring.remove(),700);
+  for(let i=0;i<12;i++){
+    const drop=el('i','spark'),angle=i*Math.PI*2/12,travel=rect.width*(.65+Math.random()*.65);
+    drop.style.left=x+'px';drop.style.top=y+'px';
+    drop.style.setProperty('--dx',Math.cos(angle)*travel+'px');
+    drop.style.setProperty('--dy',Math.sin(angle)*travel+18+'px');
+    drop.style.setProperty('--size',3+Math.random()*6+'px');
+    drop.style.setProperty('--duration',600+Math.random()*220+'ms');
+    document.body.append(drop);setTimeout(()=>drop.remove(),900);
+  }
+  setTimeout(callback,420);
+}
+
 function renderWeek(){const day=dateFromKey(selected),dayOfWeek=(day.getDay()+6)%7,monday=new Date(day);monday.setDate(day.getDate()-dayOfWeek);const strip=$('weekStrip');strip.replaceChildren();const short=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];for(let i=0;i<7;i++){const d=new Date(monday);d.setDate(monday.getDate()+i);const key=dateKey(d),btn=el('button','day'+(key===selected?' active':''));btn.type='button';btn.setAttribute('aria-label',d.toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'}));btn.setAttribute('aria-pressed',String(key===selected));btn.append(el('span','',short[i]),el('b','',String(d.getDate())));btn.onclick=()=>{selected=key;panel='home';render()};strip.append(btn)}}
 function renderTasks(){const host=$('tasks');host.replaceChildren();const list=currentItems(),done=list.filter(x=>x.done).length;$('counter').textContent=done+' из '+list.length;$('progressNumber').textContent=done;$('progressTotal').textContent='из '+list.length;$('progressOrb').style.setProperty('--progress',(list.length?done/list.length*100:0)+'%');$('progressOrb').setAttribute('aria-label','Выполнено '+done+' из '+list.length);
 if(!list.length){const empty=el('div','empty glass');empty.append(el('strong','','Пока здесь свободно 🫧'),el('p','','Добавь маленькое дело кнопкой +'));host.append(empty);return}
@@ -163,6 +219,29 @@ function closeModal(){backdrop.hidden=true;document.body.style.overflow='';$('op
 function addDraft(){const inp=$('draftStepInput'),v=inp.value.trim();if(v){draftSteps.push(v);inp.value='';renderDraft();inp.focus()}}
 $('openModal').onclick=openModal;$('closeModal').onclick=closeModal;$('cancelModal').onclick=closeModal;$('addDraftStep').onclick=addDraft;$('draftStepInput').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();addDraft()}};backdrop.onclick=e=>{if(e.target===backdrop)closeModal()};document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!backdrop.hidden)closeModal()});
 $('newTask').onsubmit=e=>{e.preventDefault();const title=$('taskInput').value.trim();if(!title)return;const extra=$('draftStepInput').value.trim();if(extra)draftSteps.push(extra);addTask(title,draftSteps);closeModal();panel='home';render()};
+// Pointer lighting is restricted to fine pointers and respects reduced motion.
+const motionAllowed=matchMedia('(prefers-reduced-motion: reduce)'),finePointer=matchMedia('(hover: hover) and (pointer: fine)');
+let litSurface=null,lightFrame=0;
+function clearLight(){
+  if(!litSurface)return;
+  ['--tilt-x','--tilt-y','--card-x','--card-y','--light-x','--light-y'].forEach(key=>litSurface.style.removeProperty(key));
+  litSurface=null;
+}
+document.addEventListener('pointermove',event=>{
+  if(motionAllowed.matches||!finePointer.matches)return;
+  const surface=event.target.closest('.progress-orb,.task');
+  if(surface!==litSurface){cancelAnimationFrame(lightFrame);clearLight();litSurface=surface}
+  if(!surface)return;
+  cancelAnimationFrame(lightFrame);
+  lightFrame=requestAnimationFrame(()=>{
+    const rect=surface.getBoundingClientRect(),x=(event.clientX-rect.left)/rect.width,y=(event.clientY-rect.top)/rect.height;
+    surface.style.setProperty('--light-x',x*100+'%');surface.style.setProperty('--light-y',y*100+'%');
+    surface.style.setProperty('--tilt-x',(0.5-y)*12+'deg');surface.style.setProperty('--tilt-y',(x-.5)*12+'deg');
+    surface.style.setProperty('--card-x',(.5-y)*3+'deg');surface.style.setProperty('--card-y',(x-.5)*3+'deg');
+  });
+},{passive:true});
+document.documentElement.addEventListener('pointerleave',()=>{cancelAnimationFrame(lightFrame);clearLight()});
+motionAllowed.addEventListener('change',()=>{cancelAnimationFrame(lightFrame);clearLight()});
 render();
 })();
 </script>
