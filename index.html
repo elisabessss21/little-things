@@ -155,26 +155,39 @@ body{background:#75565d}
 @keyframes liquid-arrive{from{opacity:0;filter:blur(6px);transform:translateY(18px) scale(.97,.95)}to{opacity:1;filter:blur(0);transform:none}}
 @media(prefers-reduced-motion:reduce){.dock-lens{transition:none}.dock-lens:after,.task.flowing:after,.modal-backdrop:not([hidden]){animation:none}}
 
+/* Two named sections replace the fixed icon dock. */
+.app{padding-bottom:calc(30px + env(safe-area-inset-bottom,0px))}
+.section-tabs{position:relative;isolation:isolate;display:flex;padding:7px;margin:24px 7px 16px;border:1px solid #f9d7e24f;border-radius:32px;background:linear-gradient(120deg,#e4bdce44,#d1a0b51c);backdrop-filter:blur(24px)}
+.section-tabs .navbtn{flex:1;min-width:0;width:auto;height:48px;font-size:15px;color:#f5e3e9}
+.section-tabs .dock-lens{height:48px}
+.calendar-controls{display:flex;align-items:center;gap:7px;margin:0 7px;color:#f5e3e9}
+.calendar-controls button{min-width:40px;min-height:44px;border-radius:18px;background:#ffffff12;font-size:25px}
+.calendar-controls #goToday{font-size:12px;padding:0 10px}
+#calendarMonth{flex:1;text-align:center;font-size:14px}
+.quick-panel{margin:0 7px}.quick-panel h3{font-size:20px;color:#f5e3e9}.quick-card{color:#f5e3e9}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 </style>
 </head>
 <body>
 <div class="scene" aria-hidden="true"><div class="ripple one"></div><div class="ripple two"></div><div class="ripple three"></div><div class="float-orb one"></div><div class="float-orb two"></div><div class="float-orb three"></div></div>
 <main class="app">
 <header class="header"><div><div class="logo">bubble.</div><p class="date-label" id="dateLabel">Сегодня</p></div><button id="openModal" class="add-button" aria-label="Добавить дело" title="Добавить дело">+</button></header>
+<nav class="section-tabs" aria-label="Разделы">
+<button type="button" class="navbtn active" data-panel="home" aria-pressed="true">Сегодня</button>
+<button type="button" class="navbtn" data-panel="familiar" aria-pressed="false">Знакомые дела</button>
+</nav>
+<section id="homePanel" aria-label="Дела по дням">
+<div class="calendar-controls"><button type="button" id="prevWeek" aria-label="Предыдущая неделя">‹</button><span id="calendarMonth" aria-live="polite"></span><button type="button" id="nextWeek" aria-label="Следующая неделя">›</button><button type="button" id="goToday">Сегодня</button></div>
 <div class="week-strip" id="weekStrip" aria-label="Дни недели"></div>
 <div class="progress-wrap"><div id="progressOrb" class="progress-orb" style="--progress:0%" role="img" aria-label="Прогресс выполнения"><i class="orb-depth" aria-hidden="true"></i><i class="orb-shell" aria-hidden="true"></i><i class="orb-glint" aria-hidden="true"></i><span id="progressNumber" class="progress-number">0</span><span id="progressTotal" class="progress-total">из 0</span></div></div>
 <div class="list-title"><h2 id="listHeading">Мои дела</h2><span id="counter">0 из 0</span></div>
 <section class="tasks" id="tasks" aria-label="Список дел"></section>
+</section>
 <section class="quick-panel glass" id="quickPanel" hidden></section>
 <p class="footer">Каждое маленькое дело заслуживает своего пузырька ♡</p>
+<p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
 </main>
-<nav class="bottom-dock" aria-label="Разделы">
-<button class="navbtn active" data-panel="home" title="Дела" aria-label="Дела"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6M17 2v6M3 10h18M7 14h2M12 14h2M7 18h2"/></svg></button>
-<button class="navbtn" data-panel="quick" title="Быстрые дела" aria-label="Быстрые дела"><svg viewBox="0 0 24 24"><path d="m12 2 1.9 6.1L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.9L12 2ZM19 16l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2Z"/></svg></button>
-<button class="navbtn" data-panel="stats" title="Статистика" aria-label="Статистика"><svg viewBox="0 0 24 24"><path d="M4 20V12h4v8M10 20V7h4v13M16 20V3h4v17M2 21h20"/></svg></button>
-<button class="navbtn" data-panel="templates" title="Шаблоны" aria-label="Шаблоны"><svg viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5"/></svg></button>
-<button class="navbtn" data-panel="settings" title="Настройки и данные" aria-label="Настройки и данные"><svg viewBox="0 0 24 24"><path d="M12 3v2M12 19v2M4 12H2M22 12h-2M5.5 5.5l1.5 1.5M17 17l1.5 1.5M18.5 5.5 17 7M7 17l-1.5 1.5"/><circle cx="12" cy="12" r="5"/></svg></button>
-</nav>
+
 <div id="modalBackdrop" class="modal-backdrop" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-head"><div><span class="modal-eyebrow">bubble. ✧</span><h2 id="modalTitle">Новое дело</h2></div><button type="button" class="close-modal" id="closeModal" aria-label="Закрыть">×</button></div>
 <form id="newTask"><label class="field-label" for="taskInput">Что хочется сделать?</label><input class="modal-input" id="taskInput" maxlength="180" placeholder="Например, помыть голову" autocomplete="off" required>
 <div class="modal-step-title">Шаги <span>по желанию</span></div><div id="draftSteps" class="draft-steps"></div><div class="draft-row"><input id="draftStepInput" maxlength="150" placeholder="Добавить небольшой шаг"><button id="addDraftStep" type="button" aria-label="Добавить шаг">+</button></div>
@@ -186,7 +199,7 @@ let items=[];try{const existing=JSON.parse(localStorage.getItem(KEY)||'[]');if(A
 let selected=nowKey(),panel='home',expanded=new Set(),draftSteps=[];
 const el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n};
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(items))}catch(e){alert('Не получилось сохранить данные в браузере. Проверь свободное место и настройки Safari.')}};
-function currentItems(){return selected===nowKey()?items.filter(x=>!x.done||x.date===selected):items.filter(x=>x.date===selected)}
+function currentItems(){return selected===nowKey()?items.filter(x=>(!x.done&&x.date<=selected)||x.date===selected):items.filter(x=>x.date===selected)}
 function fmtDate(k){const d=dateFromKey(k),same=k===nowKey();return (same?'Сегодня, ':'')+d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'})}
 function addTask(title,steps=[],date=selected){const t=title.trim();if(!t)return;items.unshift({id:uid(),title:t,date,done:false,steps:steps.map(s=>({title:s,done:false}))});save();render()}
 function pop(node,callback){
@@ -210,7 +223,7 @@ function pop(node,callback){
   setTimeout(callback,420);
 }
 
-function renderWeek(){const day=dateFromKey(selected),dayOfWeek=(day.getDay()+6)%7,monday=new Date(day);monday.setDate(day.getDate()-dayOfWeek);const strip=$('weekStrip');strip.replaceChildren();const short=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];for(let i=0;i<7;i++){const d=new Date(monday);d.setDate(monday.getDate()+i);const key=dateKey(d),btn=el('button','day'+(key===selected?' active':''));btn.type='button';btn.setAttribute('aria-label',d.toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'}));btn.setAttribute('aria-pressed',String(key===selected));btn.append(el('span','',short[i]),el('b','',String(d.getDate())));btn.onclick=()=>{selected=key;panel='home';render()};strip.append(btn)}}
+function renderWeek(){$('calendarMonth').textContent=dateFromKey(selected).toLocaleDateString('ru-RU',{month:'long',year:'numeric'});$('goToday').disabled=selected===nowKey();const day=dateFromKey(selected),dayOfWeek=(day.getDay()+6)%7,monday=new Date(day);monday.setDate(day.getDate()-dayOfWeek);const strip=$('weekStrip');strip.replaceChildren();const short=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];for(let i=0;i<7;i++){const d=new Date(monday);d.setDate(monday.getDate()+i);const key=dateKey(d),btn=el('button','day'+(key===selected?' active':''));btn.type='button';btn.setAttribute('aria-label',d.toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'}));btn.setAttribute('aria-pressed',String(key===selected));btn.append(el('span','',short[i]),el('b','',String(d.getDate())));btn.onclick=()=>{selected=key;panel='home';render()};strip.append(btn)}}
 function renderTasks(){const host=$('tasks');host.replaceChildren();const list=currentItems(),done=list.filter(x=>x.done).length;$('counter').textContent=done+' из '+list.length;$('progressNumber').textContent=done;$('progressTotal').textContent='из '+list.length;$('progressOrb').style.setProperty('--progress',(list.length?done/list.length*100:0)+'%');$('progressOrb').setAttribute('aria-label','Выполнено '+done+' из '+list.length);
 if(!list.length){const empty=el('div','empty glass');empty.append(el('strong','','Пока здесь свободно 🫧'),el('p','','Добавь маленькое дело кнопкой +'));host.append(empty);return}
 for(const item of list){const card=el('article','task glass'+(item.done?' done':'')),head=el('div','taskhead'),check=el('input','check');check.type='checkbox';check.checked=!!item.done;check.setAttribute('aria-label',(item.done?'Вернуть дело: ':'Лопнуть пузырёк: ')+item.title);check.onchange=()=>{if(check.checked)pop(check,()=>{item.done=true;save();render()});else{item.done=false;save();render()}};const content=el('div','task-name'),title=el('span','tasktitle',item.title);content.append(title);const steps=Array.isArray(item.steps)?item.steps:(item.steps=[]);if(steps.length)content.append(el('span','task-meta',steps.length+' '+(steps.length===1?'шаг':steps.length<5?'шага':'шагов')+' · '+steps.filter(s=>s.done).length+' сделано'));
@@ -221,23 +234,28 @@ if(!steps.length){const suggest=el('button','soft','✧ Помочь разби�
 if(item.suggestedSteps&&steps.length){const undo=el('button','soft','× Убрать предложенные шаги');undo.type='button';undo.onclick=()=>{item.steps=[];item.suggestedSteps=false;save();render()};actions.append(undo)}
 const del=el('button','soft','Удалить дело');del.type='button';del.onclick=()=>{if(confirm('Удалить дело «'+item.title+'»?')){items=items.filter(x=>x.id!==item.id);expanded.delete(item.id);save();render()}};actions.append(del);details.append(actions);card.append(details)}host.append(card)}
 }
-function renderPanel(){const box=$('quickPanel');box.replaceChildren();box.hidden=panel==='home';if(panel==='home')return;
-const titles={quick:'Быстрое добавление',stats:'Маленькие победы',templates:'Знакомые дела',settings:'Данные bubble.'};box.append(el('h3','',titles[panel]));const grid=el('div','quick-grid');
-const make=(text,note,onClick)=>{const b=el('button','quick-card',text);b.type='button';if(note)b.append(el('small','',note));b.onclick=onClick;grid.append(b)};
-if(panel==='quick'){const past=[...items].filter(x=>x.done&&x.date!==selected),seen=new Set();past.forEach(x=>{const k=x.title.toLowerCase();if(seen.has(k)||seen.size>=4)return;seen.add(k);make(x.title,'＋ Добавить снова',()=>addTask(x.title))});if(!seen.size)box.append(el('p','','Здесь появятся часто повторяющиеся дела. Пока можно выбрать шаблон.'));make('Добавить своё','Новая задача',openModal)}
-if(panel==='stats'){const total=items.length,done=items.filter(x=>x.done).length;box.append(el('p','','Всего сохранено дел: '+total+'. Выполнено: '+done+'. Без серий, штрафов и оценок — только твои маленькие победы.'))}
-if(panel==='templates'){['Помыть голову','Разобрать посуду','Пройти урок QA','Сделать брелок','Полить цветы','Убраться 10 минут'].forEach(t=>make(t,'＋ Добавить',()=>addTask(t)))}
-if(panel==='settings'){box.append(el('p','','Дела сохраняются на этом устройстве в хранилище браузера. Приложение с иконки iPhone может иметь отдельные данные от Safari. Сделай резервную копию, чтобы их не потерять.'));make('Скачать копию','JSON-файл',()=>{const data=new Blob([JSON.stringify({version:1,items},null,2)],{type:'application/json'}),url=URL.createObjectURL(data),a=document.createElement('a');a.href=url;a.download='bubble-backup.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)});make('Восстановить','Выбрать JSON',()=>{const input=document.createElement('input');input.type='file';input.accept='.json,application/json';input.onchange=async()=>{try{const file=input.files?.[0];if(!file)return;const data=JSON.parse(await file.text()),list=Array.isArray(data)?data:data.items;if(!Array.isArray(list)||!list.every(x=>x&&typeof x.title==='string'))throw Error('Invalid');if(!confirm('Восстановить '+list.length+' дел? Текущие дела будут сохранены, совпадения объединены.'))return;const byId=new Map(items.map(x=>[x.id,x]));list.forEach(x=>byId.set(x.id||uid(),x));items=[...byId.values()];save();render()}catch(e){alert('Не удалось прочитать резервную копию.')}};input.click()})}
-if(grid.children.length)box.append(grid)
+function renderPanel(){
+const box=$('quickPanel');box.replaceChildren();box.hidden=panel==='home';$('homePanel').hidden=panel!=='home';if(panel==='home')return;
+box.append(el('h3','','Знакомые дела'),el('p','','Нажми на рекомендацию — она сразу появится в делах на сегодня.'));
+const counts=new Map();
+for(const item of items){const key=item.title.trim().toLocaleLowerCase('ru-RU');if(!key)continue;const entry=counts.get(key)||{title:item.title,count:0};entry.count++;counts.set(key,entry)}
+const recommendations=[...counts.values()].sort((a,b)=>b.count-a.count).slice(0,8).map(x=>x.title);
+const seen=new Set(recommendations.map(t=>t.toLocaleLowerCase('ru-RU')));
+for(const title of ['Помыть голову','Разобрать посуду','Пройти урок QA','Сделать брелок','Полить цветы','Убраться 10 минут']){if(!seen.has(title.toLocaleLowerCase('ru-RU')))recommendations.push(title)}
+const grid=el('div','quick-grid');
+for(const title of recommendations){const button=el('button','quick-card',title);button.type='button';const exists=items.some(x=>!x.done&&x.date<=nowKey()&&x.title.trim().toLocaleLowerCase('ru-RU')===title.trim().toLocaleLowerCase('ru-RU'));button.append(el('small','',exists?'Уже в делах на сегодня':'＋ Добавить на сегодня'));button.disabled=exists;button.onclick=()=>{selected=nowKey();panel='home';addTask(title,[],selected);$('announcement').textContent='Добавлено на сегодня: '+title;document.querySelector('[data-panel="home"]').focus()};grid.append(button)}
+box.append(grid);
 }
 function render(){
 const previousCards=new Map([...document.querySelectorAll('.task')].map(card=>[card.dataset.taskId,{rect:card.getBoundingClientRect(),expanded:!!card.querySelector('.task-details'),done:card.classList.contains('done')}]));
 const previousPanel=$('quickPanel').textContent;
 const previousDate=$('dateLabel').textContent;
 const d=dateFromKey(selected);$('dateLabel').textContent=fmtDate(selected);$('listHeading').textContent=selected===nowKey()?'Мои дела':'Дела на '+d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'});renderWeek();renderTasks();renderPanel();document.querySelectorAll('.navbtn').forEach(b=>{const active=b.dataset.panel===panel;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});animateRender(previousCards,previousPanel,previousDate);moveLens()}
-document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>{panel=b.dataset.panel;render();if(panel!=='home')$('quickPanel').scrollIntoView({behavior:'smooth',block:'nearest'})});
+document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>{panel=b.dataset.panel;if(panel==='home')selected=nowKey();render()});
+function changeWeek(offset){const d=dateFromKey(selected);d.setDate(d.getDate()+offset*7);selected=dateKey(d);render()}
+$('prevWeek').onclick=()=>changeWeek(-1);$('nextWeek').onclick=()=>changeWeek(1);$('goToday').onclick=()=>{selected=nowKey();render()};
 const backdrop=$('modalBackdrop');function renderDraft(){const host=$('draftSteps');host.replaceChildren();draftSteps.forEach((t,i)=>{const row=el('div','draft-step'),b=el('button','','×');b.type='button';b.setAttribute('aria-label','Удалить шаг');b.onclick=()=>{draftSteps.splice(i,1);renderDraft()};row.append(el('span','',t),b);host.append(row)})}
-function openModal(){draftSteps=[];renderDraft();$('taskInput').value='';$('draftStepInput').value='';backdrop.hidden=false;document.body.style.overflow='hidden';setTimeout(()=>$('taskInput').focus(),60)}
+function openModal(){if(panel!=='home'){selected=nowKey();panel='home';render()}draftSteps=[];renderDraft();$('taskInput').value='';$('draftStepInput').value='';backdrop.hidden=false;document.body.style.overflow='hidden';setTimeout(()=>$('taskInput').focus(),60)}
 let modalExit=null;
 function closeModal(){
   if(backdrop.hidden||modalExit)return;
@@ -251,7 +269,7 @@ function addDraft(){const inp=$('draftStepInput'),v=inp.value.trim();if(v){draft
 $('openModal').onclick=openModal;$('closeModal').onclick=closeModal;$('cancelModal').onclick=closeModal;$('addDraftStep').onclick=addDraft;$('draftStepInput').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();addDraft()}};backdrop.onclick=e=>{if(e.target===backdrop)closeModal()};document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!backdrop.hidden)closeModal()});
 $('newTask').onsubmit=e=>{e.preventDefault();const title=$('taskInput').value.trim();if(!title)return;const extra=$('draftStepInput').value.trim();if(extra)draftSteps.push(extra);addTask(title,draftSteps);closeModal();panel='home';render()};
 const liquidTiming={duration:650,easing:'cubic-bezier(.22,.75,.18,1)'};
-const dock=document.querySelector('.bottom-dock'),lens=el('i','dock-lens');
+const dock=document.querySelector('.section-tabs'),lens=el('i','dock-lens');
 lens.setAttribute('aria-hidden','true');dock.prepend(lens);
 function moveLens(){
   const active=dock.querySelector('.navbtn.active');
