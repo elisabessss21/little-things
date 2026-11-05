@@ -166,6 +166,7 @@ body{background:#75565d}
 #calendarMonth{flex:1;text-align:center;font-size:14px}
 .quick-panel{margin:0 7px}.quick-panel h3{font-size:20px;color:#f5e3e9}.quick-card{color:#f5e3e9}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.app{touch-action:pan-y pinch-zoom}
 </style>
 </head>
 <body>
@@ -251,7 +252,48 @@ const previousCards=new Map([...document.querySelectorAll('.task')].map(card=>[c
 const previousPanel=$('quickPanel').textContent;
 const previousDate=$('dateLabel').textContent;
 const d=dateFromKey(selected);$('dateLabel').textContent=fmtDate(selected);$('listHeading').textContent=selected===nowKey()?'Мои дела':'Дела на '+d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'});renderWeek();renderTasks();renderPanel();document.querySelectorAll('.navbtn').forEach(b=>{const active=b.dataset.panel===panel;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});animateRender(previousCards,previousPanel,previousDate);moveLens()}
-document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>{panel=b.dataset.panel;if(panel==='home')selected=nowKey();render()});
+function switchPanel(next){
+  if(next!=='home'&&next!=='familiar')return;
+  const changed=panel!==next;
+  panel=next;if(panel==='home')selected=nowKey();render();
+  if(changed&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    const surface=$(panel==='home'?'homePanel':'quickPanel');
+    surface.animate?.([{opacity:.3,transform:'translateX('+(panel==='home'?-22:22)+'px)',filter:'blur(3px)'},{opacity:1,transform:'translateX(0)',filter:'blur(0)'}],liquidTiming);
+  }
+}
+document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>switchPanel(b.dataset.panel));
+// Only intentional horizontal touch gestures change sections.
+const swipeArea=document.querySelector('.app');
+let swipe=null,suppressClickUntil=0;
+swipeArea.addEventListener('pointerdown',e=>{
+  if(e.pointerType!=='touch')return;
+  if(!e.isPrimary){swipe=null;return}
+  if(!$('modalBackdrop').hidden||e.target.closest('input,textarea,select,[contenteditable="true"]'))return;
+  swipe={id:e.pointerId,x:e.clientX,y:e.clientY,axis:null};
+},{passive:true});
+swipeArea.addEventListener('pointermove',e=>{
+  if(!swipe||e.pointerId!==swipe.id)return;
+  const dx=e.clientX-swipe.x,dy=e.clientY-swipe.y;
+  if(!swipe.axis&&Math.max(Math.abs(dx),Math.abs(dy))>12){
+    swipe.axis=Math.abs(dx)>Math.abs(dy)*1.5?'x':'y';
+  }
+  if(swipe.axis==='y'){swipe=null;return}
+  if(swipe.axis==='x')suppressClickUntil=Date.now()+500;
+},{passive:true});
+swipeArea.addEventListener('pointerup',e=>{
+  if(!swipe||e.pointerId!==swipe.id)return;
+  const gesture=swipe;swipe=null;
+  const dx=e.clientX-gesture.x,dy=e.clientY-gesture.y;
+  if(gesture.axis==='x')suppressClickUntil=Date.now()+500;
+  if(Math.abs(dx)<60||Math.abs(dx)<=Math.abs(dy)*1.5||!$('modalBackdrop').hidden)return;
+  suppressClickUntil=Date.now()+500;
+  if(dx<0&&panel==='home')switchPanel('familiar');
+  else if(dx>0&&panel==='familiar')switchPanel('home');
+},{passive:true});
+swipeArea.addEventListener('pointercancel',()=>{swipe=null},{passive:true});
+swipeArea.addEventListener('click',e=>{
+  if(e.detail!==0&&Date.now()<suppressClickUntil){e.preventDefault();e.stopImmediatePropagation()}
+},true);
 function changeWeek(offset){const d=dateFromKey(selected);d.setDate(d.getDate()+offset*7);selected=dateKey(d);render()}
 $('prevWeek').onclick=()=>changeWeek(-1);$('nextWeek').onclick=()=>changeWeek(1);$('goToday').onclick=()=>{selected=nowKey();render()};
 const backdrop=$('modalBackdrop');function renderDraft(){const host=$('draftSteps');host.replaceChildren();draftSteps.forEach((t,i)=>{const row=el('div','draft-step'),b=el('button','','×');b.type='button';b.setAttribute('aria-label','Удалить шаг');b.onclick=()=>{draftSteps.splice(i,1);renderDraft()};row.append(el('span','',t),b);host.append(row)})}
