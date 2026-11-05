@@ -166,7 +166,18 @@ body{background:#75565d}
 #calendarMonth{flex:1;text-align:center;font-size:14px}
 .quick-panel{margin:0 7px}.quick-panel h3{font-size:20px;color:#f5e3e9}.quick-card{color:#f5e3e9}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-.app{touch-action:pan-y pinch-zoom}
+.app{touch-action:auto}
+.header,.section-tabs,.progress-wrap,.tasks,.quick-panel,.list-title,.calendar-controls{touch-action:pan-y pinch-zoom}
+/* A full month flows beneath one moving glass lens. */
+.week-strip{display:block;overflow-x:auto;overflow-y:hidden;padding:0;margin:14px 7px 0;scrollbar-width:none;touch-action:pan-x pan-y pinch-zoom;overscroll-behavior-x:contain;border-radius:27px;-webkit-overflow-scrolling:touch}
+.week-strip::-webkit-scrollbar{display:none}
+.calendar-track{position:relative;isolation:isolate;display:flex;gap:8px;width:max-content;padding:6px var(--calendar-inset,0px)}
+.calendar-track .day{position:relative;z-index:1;flex:0 0 48px;width:48px;height:68px;justify-content:center;padding:8px 0;border-radius:24px;color:#e9ccd6;transition:color .5s var(--liquid-ease),background .5s,border-color .5s}
+.calendar-track .day.active{color:#34252d;background:transparent;border-color:transparent;box-shadow:none}
+.calendar-track .day[aria-current="date"]:not(.active){border-color:#ffe9f3a0}
+.calendar-lens{position:absolute;left:0;top:6px;width:48px;height:68px;border-radius:24px;pointer-events:none;border:1px solid #fff0f5c4;background:radial-gradient(ellipse at 22% 10%,#fff9,transparent 42%),linear-gradient(130deg,#fbe6f2bd,#d5b3c69c 55%,#f7dce9cf);box-shadow:inset 1px 2px 5px #fff9,inset -2px -3px 7px #a66a9340,0 3px 7px #38243230;backdrop-filter:blur(16px) saturate(150%);transition:transform .65s var(--liquid-ease)}
+.calendar-lens:after{content:'';position:absolute;inset:1px;border-radius:inherit;background:linear-gradient(110deg,transparent 20%,#fff6 45%,transparent 70%);background-size:250% 100%;animation:lens-flow 6s ease-in-out infinite alternate}
+@media(prefers-reduced-motion:reduce){.calendar-lens{transition:none}.calendar-lens:after{animation:none}}
 </style>
 </head>
 <body>
@@ -178,8 +189,8 @@ body{background:#75565d}
 <button type="button" class="navbtn" data-panel="familiar" aria-pressed="false">Знакомые дела</button>
 </nav>
 <section id="homePanel" aria-label="Дела по дням">
-<div class="calendar-controls"><button type="button" id="prevWeek" aria-label="Предыдущая неделя">‹</button><span id="calendarMonth" aria-live="polite"></span><button type="button" id="nextWeek" aria-label="Следующая неделя">›</button><button type="button" id="goToday">Сегодня</button></div>
-<div class="week-strip" id="weekStrip" aria-label="Дни недели"></div>
+<div class="calendar-controls"><button type="button" id="prevWeek" aria-label="Предыдущий месяц">‹</button><span id="calendarMonth" aria-live="polite"></span><button type="button" id="nextWeek" aria-label="Следующий месяц">›</button><button type="button" id="goToday">Сегодня</button></div>
+<div class="week-strip" id="weekStrip" aria-label="Дни месяца — прокрути, чтобы выбрать дату"></div>
 <div class="progress-wrap"><button type="button" id="progressOrb" class="progress-orb" style="--progress:0%" aria-label="Добавить дело" aria-haspopup="dialog" title="Добавить дело"><i class="orb-depth" aria-hidden="true"></i><i class="orb-shell" aria-hidden="true"></i><i class="orb-glint" aria-hidden="true"></i><span id="progressNumber" class="progress-number">0</span><span id="progressTotal" class="progress-total">из 0</span></button></div>
 <div class="list-title"><h2 id="listHeading">Мои дела</h2><span id="counter">0 из 0</span></div>
 <section class="tasks" id="tasks" aria-label="Список дел"></section>
@@ -224,7 +235,47 @@ function pop(node,callback){
   setTimeout(callback,420);
 }
 
-function renderWeek(){$('calendarMonth').textContent=dateFromKey(selected).toLocaleDateString('ru-RU',{month:'long',year:'numeric'});$('goToday').disabled=selected===nowKey();const day=dateFromKey(selected),dayOfWeek=(day.getDay()+6)%7,monday=new Date(day);monday.setDate(day.getDate()-dayOfWeek);const strip=$('weekStrip');strip.replaceChildren();const short=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];for(let i=0;i<7;i++){const d=new Date(monday);d.setDate(monday.getDate()+i);const key=dateKey(d),btn=el('button','day'+(key===selected?' active':''));btn.type='button';btn.setAttribute('aria-label',d.toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'}));btn.setAttribute('aria-pressed',String(key===selected));btn.append(el('span','',short[i]),el('b','',String(d.getDate())));btn.onclick=()=>{selected=key;panel='home';render()};strip.append(btn)}}
+let calendarFrame=0,calendarSelection='';
+function centerCalendar(animate=true){
+  const strip=$('weekStrip'),active=strip.querySelector('.day.active');
+  if(!active||!strip.clientWidth)return;
+  const track=strip.querySelector('.calendar-track'),lens=strip.querySelector('.calendar-lens');
+  track.style.setProperty('--calendar-inset',Math.max(0,(strip.clientWidth-active.offsetWidth)/2)+'px');
+  lens.style.transform='translateX('+active.offsetLeft+'px)';
+  strip.scrollTo({left:active.offsetLeft-(strip.clientWidth-active.offsetWidth)/2,behavior:animate&&!matchMedia('(prefers-reduced-motion: reduce)').matches?'smooth':'instant'});
+}
+function renderWeek(){
+  const day=dateFromKey(selected),monthKey=selected.slice(0,7),strip=$('weekStrip');
+  $('calendarMonth').textContent=day.toLocaleDateString('ru-RU',{month:'long',year:'numeric'});
+  $('goToday').disabled=selected===nowKey();
+  const rebuild=strip.dataset.month!==monthKey;
+  if(rebuild){
+    strip.dataset.month=monthKey;strip.replaceChildren();
+    const track=el('div','calendar-track'),lens=el('i','calendar-lens');
+    lens.setAttribute('aria-hidden','true');track.append(lens);
+    const count=new Date(day.getFullYear(),day.getMonth()+1,0).getDate();
+    const short=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+    for(let number=1;number<=count;number++){
+      const d=new Date(day.getFullYear(),day.getMonth(),number,12),key=dateKey(d),btn=el('button','day');
+      btn.type='button';btn.dataset.date=key;
+      btn.setAttribute('aria-label',d.toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'}));
+      if(key===nowKey())btn.setAttribute('aria-current','date');
+      btn.append(el('span','',short[d.getDay()]),el('b','',String(number)));
+      btn.onclick=()=>{selected=key;panel='home';render()};
+      track.append(btn);
+    }
+    strip.append(track);
+  }
+  strip.querySelectorAll('.day').forEach(btn=>{
+    const active=btn.dataset.date===selected;
+    btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',String(active));
+  });
+  const signature=selected+':'+panel;
+  if(rebuild||signature!==calendarSelection){
+    calendarSelection=signature;cancelAnimationFrame(calendarFrame);
+    calendarFrame=requestAnimationFrame(()=>centerCalendar(!rebuild));
+  }
+}
 function renderTasks(){const host=$('tasks');host.replaceChildren();const list=currentItems(),done=list.filter(x=>x.done).length;$('counter').textContent=done+' из '+list.length;$('progressNumber').textContent=done;$('progressTotal').textContent='из '+list.length;$('progressOrb').style.setProperty('--progress',(list.length?done/list.length*100:0)+'%');$('progressOrb').setAttribute('aria-label','Добавить дело. Выполнено '+done+' из '+list.length);
 if(!list.length){const empty=el('div','empty glass');empty.append(el('strong','','Пока здесь свободно 🫧'),el('p','','Добавь маленькое дело кнопкой +'));host.append(empty);return}
 for(const item of list){const card=el('article','task glass'+(item.done?' done':'')),head=el('div','taskhead'),check=el('input','check');check.type='checkbox';check.checked=!!item.done;check.setAttribute('aria-label',(item.done?'Вернуть дело: ':'Лопнуть пузырёк: ')+item.title);check.onchange=()=>{if(check.checked)pop(check,()=>{item.done=true;save();render()});else{item.done=false;save();render()}};const content=el('div','task-name'),title=el('span','tasktitle',item.title);content.append(title);const steps=Array.isArray(item.steps)?item.steps:(item.steps=[]);if(steps.length)content.append(el('span','task-meta',steps.length+' '+(steps.length===1?'шаг':steps.length<5?'шага':'шагов')+' · '+steps.filter(s=>s.done).length+' сделано'));
@@ -268,7 +319,7 @@ let swipe=null,suppressClickUntil=0;
 swipeArea.addEventListener('pointerdown',e=>{
   if(e.pointerType!=='touch')return;
   if(!e.isPrimary){swipe=null;return}
-  if(!$('modalBackdrop').hidden||e.target.closest('input,textarea,select,[contenteditable="true"]'))return;
+  if(!$('modalBackdrop').hidden||e.target.closest('#weekStrip,input,textarea,select,[contenteditable="true"]'))return;
   swipe={id:e.pointerId,x:e.clientX,y:e.clientY,axis:null};
 },{passive:true});
 swipeArea.addEventListener('pointermove',e=>{
@@ -294,8 +345,8 @@ swipeArea.addEventListener('pointercancel',()=>{swipe=null},{passive:true});
 swipeArea.addEventListener('click',e=>{
   if(e.detail!==0&&Date.now()<suppressClickUntil){e.preventDefault();e.stopImmediatePropagation()}
 },true);
-function changeWeek(offset){const d=dateFromKey(selected);d.setDate(d.getDate()+offset*7);selected=dateKey(d);render()}
-$('prevWeek').onclick=()=>changeWeek(-1);$('nextWeek').onclick=()=>changeWeek(1);$('goToday').onclick=()=>{selected=nowKey();render()};
+function changeMonth(offset){const d=dateFromKey(selected),number=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+offset);d.setDate(Math.min(number,new Date(d.getFullYear(),d.getMonth()+1,0).getDate()));selected=dateKey(d);render()}
+$('prevWeek').onclick=()=>changeMonth(-1);$('nextWeek').onclick=()=>changeMonth(1);$('goToday').onclick=()=>{selected=nowKey();render()};
 const backdrop=$('modalBackdrop');function renderDraft(){const host=$('draftSteps');host.replaceChildren();draftSteps.forEach((t,i)=>{const row=el('div','draft-step'),b=el('button','','×');b.type='button';b.setAttribute('aria-label','Удалить шаг');b.onclick=()=>{draftSteps.splice(i,1);renderDraft()};row.append(el('span','',t),b);host.append(row)})}
 let modalTrigger=null;
 function openModal(){modalTrigger=document.activeElement;if(panel!=='home'){selected=nowKey();panel='home';render()}draftSteps=[];renderDraft();$('taskInput').value='';$('draftStepInput').value='';backdrop.hidden=false;document.body.style.overflow='hidden';setTimeout(()=>$('taskInput').focus(),60)}
@@ -319,6 +370,7 @@ function moveLens(){
   lens.style.width=active.offsetWidth+'px';lens.style.transform='translateX('+active.offsetLeft+'px)';
 }
 new ResizeObserver(moveLens).observe(dock);
+new ResizeObserver(()=>{cancelAnimationFrame(calendarFrame);calendarFrame=requestAnimationFrame(()=>centerCalendar(false))}).observe($('weekStrip'));
 function meltIn(node){
   node.animate([{opacity:0,filter:'blur(4px)',translate:'0 7px'},{opacity:1,filter:'blur(0)',translate:'0 0'}],liquidTiming);
 }
