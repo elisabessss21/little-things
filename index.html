@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#e9dfe8">
+<title>little things — дела без давления</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#463749;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 12% 4%,#fff8ff 0%,transparent 48%),radial-gradient(ellipse at 95% 85%,#cdb9d0 0%,transparent 58%),#e9dfe8}
+main{max-width:700px;margin:auto;padding:42px 20px 90px}.top{display:flex;justify-content:space-between;align-items:center;gap:15px}.brand{font-size:34px;letter-spacing:-1.9px;font-weight:750}.brand span{color:#9a7d9c}.sub{margin:7px 0 28px;color:#78677b;font-size:14px}.glass{background:rgba(255,255,255,.46);border:1px solid rgba(255,255,255,.76);box-shadow:0 12px 35px #72567713,inset 0 1px 0 #ffffffa6;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-radius:25px}.composer{display:flex;padding:9px;gap:8px;align-items:center}.composer input{flex:1;min-width:0;border:0;background:transparent;padding:13px 12px;font:inherit;font-size:16px;outline:none;color:inherit}.composer input::placeholder{color:#9c8a9c}button{font:inherit;cursor:pointer;border:0;color:inherit}.plus{width:46px;height:46px;flex:0 0 46px;display:grid;place-items:center;border-radius:17px;background:#86698a;color:white;font-size:28px;font-weight:300;line-height:1}.plus:active,.soft:active{transform:scale(.96)}.heading{display:flex;justify-content:space-between;align-items:baseline;margin:30px 3px 12px}.heading h2{margin:0;font-size:19px;letter-spacing:-.4px}.muted{font-size:13px;color:#8c7b8e}.progress{height:6px;background:#ffffff7a;border-radius:9px;overflow:hidden;margin:0 4px 16px}.progress div{height:100%;background:#947799;border-radius:9px;transition:width .2s}.tasks{display:grid;gap:11px}.task{padding:17px 17px 13px}.taskhead{display:flex;gap:11px;align-items:center}.check{appearance:none;-webkit-appearance:none;width:23px;height:23px;flex:0 0 23px;border-radius:9px;border:1.7px solid #ad94b0;background:#ffffff90;cursor:pointer;display:grid;place-items:center;margin:0}.check:checked{background:#947899;border-color:#947899}.check:checked:after{content:"✓";color:white;font-weight:700;font-size:15px}.tasktitle{font-size:16px;line-height:1.35;flex:1;overflow-wrap:anywhere}.task.done .tasktitle{text-decoration:line-through;color:#9b8c9c}.iconbtn{background:transparent;color:#9a859e;padding:6px;font-size:20px;border-radius:9px}.iconbtn:hover{background:#ffffff70}.actions{display:flex;flex-wrap:wrap;gap:7px;margin:13px 0 0 34px}.soft{background:#ffffff85;border:1px solid #ffffffbb;border-radius:12px;padding:8px 11px;font-size:12px;color:#725b76}.steps{margin:12px 0 0 34px;display:grid;gap:10px}.step{display:flex;gap:9px;align-items:center;font-size:14px}.step .check{width:19px;height:19px;flex-basis:19px;border-radius:7px}.step .check:checked:after{font-size:12px}.step span{overflow-wrap:anywhere}.step.finished span{text-decoration:line-through;color:#9b8c9c}.stepform{display:flex;gap:7px;margin:12px 0 0 34px}.stepform input{width:100%;min-width:0;border:1px solid #ffffffb8;border-radius:11px;background:#ffffffa3;padding:10px;font:inherit;font-size:13px;outline-color:#9d80a1}.empty{padding:35px 22px;text-align:center;color:#87748a}.empty strong{display:block;color:#5c4960;margin-bottom:7px;font-size:17px}.suggestions{display:grid;gap:9px}.suggestion{display:flex;align-items:center;gap:10px;padding:12px 15px}.suggestion span{flex:1;overflow-wrap:anywhere;font-size:14px}.footer{margin:25px 5px;text-align:center;font-size:12px;color:#927f94}button:focus-visible,input:focus-visible{outline:3px solid #ab8caf;outline-offset:2px}@media(max-width:420px){main{padding:30px 14px 60px}.brand{font-size:30px}.task{padding:15px 12px}.actions,.steps,.stepform{margin-left:31px}}
+</style>
+</head>
+<body><main>
+<header><div class="top"><div class="brand">little <span>things.</span></div><div aria-hidden="true">✦</div></div><p class="sub">Маленькие дела тоже считаются. В своём темпе.</p></header>
+<form class="composer glass" id="newTask"><input id="taskInput" maxlength="180" autocomplete="off" aria-label="Новое дело" placeholder="Что хочется сделать?" required><button class="plus" aria-label="Добавить дело" title="Добавить дело" type="submit">+</button></form>
+<section aria-label="Дела на сегодня"><div class="heading"><h2>Сегодня</h2><span class="muted" id="counter">0 из 0</span></div><div class="progress" aria-hidden="true"><div id="bar" style="width:0%"></div></div><div id="tasks" class="tasks"></div></section>
+<section id="repeatSection" hidden><div class="heading"><h2>Знакомые дела</h2><span class="muted">можно повторить</span></div><div class="suggestions" id="suggestions"></div></section>
+<div class="footer">Без дедлайнов, штрафов и чувства вины ♡</div>
+</main>
+<script>
+(()=>{'use strict';
+const KEY='little-things-v1',today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
+let items=[];try{const data=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(data))items=data}catch(e){}
+const $=id=>document.getElementById(id),save=()=>{try{localStorage.setItem(KEY,JSON.stringify(items))}catch(e){}},uid=()=>globalThis.crypto?.randomUUID?.()||String(Date.now())+Math.random().toString(36).slice(2);
+const el=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=txt;return n};
+function addTask(title){title=title.trim();if(!title)return;items.unshift({id:uid(),title,date:today(),done:false,steps:[]});save();render()}
+function render(){
+const now=today(),active=items.filter(x=>x.date===now),done=active.filter(x=>x.done).length;
+$('counter').textContent=done+' из '+active.length;$('bar').style.width=(active.length?done/active.length*100:0)+'%';
+const host=$('tasks');host.replaceChildren();
+if(!active.length){const e=el('div','empty glass');e.append(el('strong','', 'Пока ничего не нужно ✨'),el('span','', 'Добавь одно маленькое дело — этого достаточно.'));host.append(e)}
+for(const item of active){
+const card=el('article','task glass'+(item.done?' done':'')),head=el('div','taskhead'),check=el('input','check');check.type='checkbox';check.checked=!!item.done;check.setAttribute('aria-label','Выполнить: '+item.title);check.addEventListener('change',()=>{item.done=check.checked;save();render()});
+const name=el('span','tasktitle',item.title),del=el('button','iconbtn','×');del.type='button';del.title='Удалить дело';del.setAttribute('aria-label','Удалить '+item.title);del.onclick=()=>{items=items.filter(x=>x.id!==item.id);save();render()};head.append(check,name,del);card.append(head);
+const steps=Array.isArray(item.steps)?item.steps:(item.steps=[]);
+if(steps.length){const list=el('div','steps');steps.forEach((s,i)=>{const row=el('label','step'+(s.done?' finished':'')),c=el('input','check');c.type='checkbox';c.checked=!!s.done;c.addEventListener('change',()=>{s.done=c.checked;save();render()});row.append(c,el('span','',s.title));list.append(row)});card.append(list)}
+const actions=el('div','actions'),add=el('button','soft','＋ Добавить шаг');add.type='button';add.onclick=()=>{const existing=card.querySelector('.stepform');if(existing){existing.remove();return}const form=el('form','stepform'),inp=el('input');inp.placeholder='Например, достать полотенце';inp.maxLength=150;inp.required=true;const ok=el('button','soft','Добавить');ok.type='submit';form.append(inp,ok);form.onsubmit=e=>{e.preventDefault();const v=inp.value.trim();if(v){steps.push({title:v,done:false});save();render()}};card.append(form);inp.focus()};
+actions.append(add);
+if(!steps.length){const help=el('button','soft','✧ Помочь разбить на шаги');help.type='button';help.onclick=()=>{const title=item.title.toLowerCase();let variants;
+if(/голов|волос|душ|мытьс|помыться/.test(title))variants=['Подготовить полотенце','Включить воду','Помыть волосы или принять душ','Вытереться и отдохнуть'];
+else if(/посуд/.test(title))variants=['Подойти к раковине','Убрать лишнее','Помыть несколько предметов','Оставить остальное на потом, если нужно'];
+else if(/убор|прибра|комнат/.test(title))variants=['Выбрать одну маленькую зону','Убрать три вещи на место','Протереть одну поверхность','Решить, хочется ли продолжать'];
+else if(/стир|бель/.test(title))variants=['Собрать вещи','Положить в машинку','Добавить средство','Запустить стирку'];
+else variants=['Подготовить то, что понадобится','Сделать самый простой первый шаг','Продолжить, если есть силы','Отметить сделанное'];
+item.steps=variants.map(title=>({title,done:false}));save();render()};actions.append(help)}
+card.append(actions);host.append(card)}
+const titles=new Set(active.map(x=>x.title.trim().toLowerCase())),past=[...items].filter(x=>x.date!==now&&!titles.has(x.title.trim().toLowerCase()));const unique=[];const seen=new Set();for(const x of past){const k=x.title.trim().toLowerCase();if(!seen.has(k)){unique.push(x);seen.add(k)}if(unique.length>=3)break}
+const section=$('repeatSection'),suggest=$('suggestions');section.hidden=!unique.length;suggest.replaceChildren();unique.forEach(x=>{const row=el('div','suggestion glass'),label=el('span','',x.title),btn=el('button','soft','＋ Сегодня');btn.type='button';btn.onclick=()=>addTask(x.title);row.append(label,btn);suggest.append(row)});
+}
+$('newTask').addEventListener('submit',e=>{e.preventDefault();addTask($('taskInput').value);$('taskInput').value='';$('taskInput').focus()});render();
+})();
+</script></body></html>
