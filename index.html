@@ -231,6 +231,31 @@ body{background:#75565d}
 @media(prefers-reduced-motion:reduce){.scene:after{animation:none}}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.glass,.section-tabs{background:#886575}.modal{background:#79566c}}
 
+
+/* Bubble 2026 — translucent optical-glass progress sphere, reference pass 01 */
+.progress-orb{
+  border:2px solid #fff9;
+  background:
+    radial-gradient(ellipse 27% 11% at 32% 14%,#ffffffa6 0%,#ffffff10 85%,transparent 100%),
+    radial-gradient(ellipse 21% 13% at 79% 85%,#c3e7ff52,transparent 100%),
+    radial-gradient(ellipse 25% 15% at 23% 82%,#f7a9df45,transparent 100%),
+    radial-gradient(circle at 48% 48%,#ffffff09 0%,#ffffff12 62%,#d786c744 83%,#74375c80 98%,#ffffff8c 100%);
+  backdrop-filter:blur(3px) saturate(132%);
+  -webkit-backdrop-filter:blur(3px) saturate(132%);
+  box-shadow:inset 3px 5px 7px #fff9,inset -7px -8px 13px #bd75b66b,inset 14px 1px 16px #ffffff69,inset -15px 0 15px #783c6c4d,0 0 0 3px #ffffff32,0 17px 30px -13px #713d744f,0 34px 45px -28px #ffdbf7b5;
+}
+.progress-orb:after{
+  inset:5px;border:1px solid #ffffff77;opacity:1;
+  background:radial-gradient(ellipse 26% 10% at 76% 15%,#ffffffef 10%,#ffffff85 50%,transparent 100%),
+  radial-gradient(ellipse 15% 5% at 24% 18%,#fff9,transparent 100%),
+  radial-gradient(ellipse 14% 6% at 57% 93%,#d8f8ff8c,transparent 100%);
+  box-shadow:inset 0 2px 1px #ffffffab;
+}
+.progress-orb .orb-depth{opacity:.36}
+.progress-orb .orb-shell{opacity:.56}
+.progress-number{color:#fff9fc;text-shadow:0 2px 12px #4e305b85}
+.progress-total{color:#fff1fa;text-shadow:0 1px 8px #4e305b7a}
+
 </style>
 </head>
 <body>
