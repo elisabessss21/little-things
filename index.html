@@ -231,6 +231,69 @@ body{background:#75565d}
 @media(prefers-reduced-motion:reduce){.scene:after{animation:none}}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.glass,.section-tabs{background:#886575}.modal{background:#79566c}}
 
+
+/* Bubble reference sphere v2 — optical glass, not concentric rings.
+   Purely visual: task/progress behavior remains unchanged. */
+.progress-orb{
+  border:0;
+  overflow:visible;
+  border-radius:50%;
+  color:#351b3c;
+  background:
+    radial-gradient(ellipse 32% 14% at 37% 13%,#fff9,transparent 90%),
+    radial-gradient(ellipse 33% 22% at 78% 85%,#b9e8ff42,transparent 100%),
+    radial-gradient(ellipse 30% 26% at 20% 77%,#ff90d25c,transparent 100%),
+    radial-gradient(circle at 48% 47%,#f3d4ee0b 0 60%,#f5b5e224 70%,#9c477e6b 85%,#4c204d9c 94%,#ffe9ffb8 98%,#fff 100%);
+  backdrop-filter:blur(2px) saturate(1.3);
+  -webkit-backdrop-filter:blur(2px) saturate(1.3);
+  box-shadow:
+    inset 2px 3px 3px #fff9,
+    inset 9px 13px 16px -11px #fff,
+    inset -13px -10px 15px -9px #6d245bba,
+    inset -26px -16px 24px -20px #ed8aca,
+    inset 0 -23px 25px -21px #ffc9ef,
+    0 0 0 2px #ffe4fb65,
+    0 10px 14px -8px #ffb7eb8c,
+    0 24px 28px -18px #4f1d555c;
+}
+.progress-orb::before{
+  content:"";position:absolute;inset:2%;border:0;border-radius:50%;
+  background:conic-gradient(from -90deg,#fff5f9b5 0 var(--progress),transparent var(--progress) 100%);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));
+  mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));
+  opacity:.6;pointer-events:none;transform:none;
+}
+.progress-orb::after{
+  content:"";position:absolute;inset:0;border:0;border-radius:50%;clip-path:none;opacity:1;
+  background:
+    linear-gradient(139deg,transparent 0 26%,#fffdfdd9 32%,#fff9 36%,transparent 43%) 78% 12%/31% 29% no-repeat,
+    radial-gradient(ellipse 29% 10% at 31% 20%,#fffaf8ed 0%,#ffffff85 42%,transparent 100%),
+    radial-gradient(ellipse 9% 24% at 7% 49%,#fff8,transparent 100%),
+    radial-gradient(ellipse 27% 8% at 49% 95%,#ffcbf7a1,transparent 100%),
+    radial-gradient(ellipse 10% 22% at 90% 72%,#c5f1ff7d,transparent 100%);
+  box-shadow:none;filter:none;pointer-events:none;animation:none;
+}
+.progress-orb .orb-shell{
+  inset:0;border:0;opacity:1;
+  box-shadow:inset 0 0 0 2px #fff8,inset 0 0 0 7px #ffffff19,
+    inset 13px 10px 12px -12px #fff,
+    inset -15px -6px 16px -12px #3d194d8c;
+  background:radial-gradient(circle at 50% 50%,transparent 69%,#f6c4ee27 82%,#ffc5f3b3 97%,#fff8 100%);
+}
+.progress-orb .orb-depth{
+  inset:9%;border:0;opacity:.35;box-shadow:none;
+  background:radial-gradient(ellipse at 45% 35%,#ffffff0a 0 64%,#ae669c32 100%);
+}
+.progress-orb .orb-glint{
+  inset:0;opacity:.8;
+  background:conic-gradient(from 110deg,#fff0 0 12%,#ffc3f2ad 16%,#b3efffa8 20%,transparent 26% 58%,#ffd4ffb8 65%,transparent 70% 88%,#fff7 94%,transparent 100%);
+  -webkit-mask:radial-gradient(farthest-side,transparent 78%,#000 91%,transparent 100%);
+  mask:radial-gradient(farthest-side,transparent 78%,#000 91%,transparent 100%);
+  animation:none;
+}
+.progress-orb .progress-number{color:#351b3c;text-shadow:0 1px 3px #fff7;z-index:2}
+.progress-orb .progress-total{color:#55365d;text-shadow:0 1px 4px #fff9;z-index:2}
+
 </style>
 </head>
 <body>
